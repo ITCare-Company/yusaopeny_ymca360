@@ -1,0 +1,7 @@
+name: 'YMCA360 Integration - Live Streams'
+type: module
+description: 'Integration with YMCA360 Platform - pull Live Stream schedule'
+package: 'YMCA'
+core_version_requirement: ^8 || ^9 || ^10
+dependencies:
+  - yusaopeny_ymca360:yusaopeny_ymca360

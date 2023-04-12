@@ -1,0 +1,20 @@
+yusaopeny_ymca360.admin:
+  title: 'YMCA360 Integration'
+  route_name: 'yusaopeny_ymca360.yusaopeny_ymca360'
+  parent: openy_system.openy_integrations
+  description: 'Configure YMCA360 Integration settings'
+  position: left
+  weight: 101
+
+yusaopeny_ymca360.settings_form:
+  title: YMCA360 Integration
+  description: Configure YMCA360 Integration.
+  parent: yusaopeny_ymca360.admin
+  route_name: yusaopeny_ymca360.settings_form
+  weight: 1
+yusaopeny_ymca360.locations_mapping:
+  title: YMCA360 - Locations mapping
+  description: Configure YMCA360 mapping for locations.
+  parent: yusaopeny_ymca360.admin
+  route_name: yusaopeny_ymca360.locations_mapping_form
+  weight: 2

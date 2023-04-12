@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * @file
+ * Primary module hooks for YMCA360 Integration module.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+
+/**
+ * Implements hook_ENTITY_TYPE_delete().
+ */
+function yusaopeny_ymca360_node_delete(EntityInterface $node) {
+  if ($node->getType() !== 'session') {
+    return;
+  }
+  $storage = \Drupal::entityTypeManager()->getStorage('y360_mapping');
+  $mappings = $storage->loadByProperties(['session' => $node->id()]);
+  $storage->delete($mappings);
+}

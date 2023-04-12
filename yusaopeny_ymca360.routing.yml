@@ -1,0 +1,23 @@
+yusaopeny_ymca360.yusaopeny_ymca360:
+  path: '/admin/config/system/yusaopeny-ymca360'
+  defaults:
+    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
+    _title: 'YMCA360 Integration'
+  requirements:
+    _permission: 'administer yusaopeny_ymca360 configuration'
+
+yusaopeny_ymca360.settings_form:
+  path: '/admin/config/system/yusaopeny-ymca360/settings'
+  defaults:
+    _title: 'YMCA360 Integration settings'
+    _form: 'Drupal\yusaopeny_ymca360\Form\SettingsForm'
+  requirements:
+    _permission: 'administer yusaopeny_ymca360 configuration'
+
+yusaopeny_ymca360.locations_mapping_form:
+  path: '/admin/config/system/yusaopeny-ymca360/locations-mapping'
+  defaults:
+    _title: 'YMCA360 Locations mapping'
+    _form: 'Drupal\yusaopeny_ymca360\Form\LocationsMappingForm'
+  requirements:
+    _permission: 'administer yusaopeny_ymca360 configuration'

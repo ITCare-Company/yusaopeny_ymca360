@@ -1,0 +1,17 @@
+{
+    "name": "drupal/yusaopeny_ymca360",
+    "description": "YUSA OpenY YMCA360 integration",
+    "type": "drupal-module",
+    "authors": [
+        {
+            "name": "Andrey Zbukar",
+            "email": "andrey.zbukar@fivejars.com"
+        },
+        {
+            "name": "Andrey Maximov",
+            "email": "andrey.maximov@fivejars.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}

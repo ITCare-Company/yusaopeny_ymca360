@@ -1,0 +1,18 @@
+entity.y360_mapping.view:
+  title: View
+  route_name: entity.y360_mapping.canonical
+  base_route: entity.y360_mapping.canonical
+entity.y360_mapping.edit_form:
+  title: Edit
+  route_name: entity.y360_mapping.edit_form
+  base_route: entity.y360_mapping.canonical
+entity.y360_mapping.delete_form:
+  title: Delete
+  route_name: entity.y360_mapping.delete_form
+  base_route: entity.y360_mapping.canonical
+  weight: 10
+entity.y360_mapping.collection:
+  title: YMCA360 Mapping
+  route_name: entity.y360_mapping.collection
+  base_route: system.admin_content
+  weight: 99

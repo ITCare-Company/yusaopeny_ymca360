@@ -1,0 +1,30 @@
+services:
+  yusaopeny_ymca360_livestreams.syncer:
+    class: Drupal\ymca_sync\Syncer
+    arguments: [ ]
+    calls:
+      - [ addStep, [ '@yusaopeny_ymca360_livestreams.extractor', 'extract' ] ]
+      - [ addStep, [ '@yusaopeny_ymca360_livestreams.transformer', 'transform' ] ]
+      - [ addStep, [ '@yusaopeny_ymca360_livestreams.loader', 'load' ] ]
+    tags:
+      - { name: syncer }
+
+  yusaopeny_ymca360_livestreams.extractor:
+    class: Drupal\yusaopeny_ymca360_livestreams\syncer\Extractor
+    arguments:
+      - '@yusaopeny_ymca360.y360_client'
+      - '@yusaopeny_ymca360.data_wrapper'
+      - '@logger.channel.yusaopeny_ymca360_syncer'
+  yusaopeny_ymca360_livestreams.transformer:
+    class: Drupal\yusaopeny_ymca360_livestreams\syncer\Transformer
+    arguments:
+      - '@yusaopeny_ymca360.data_wrapper'
+      - '@yusaopeny_ymca360.mapping_repository'
+      - '@logger.channel.yusaopeny_ymca360_syncer'
+  yusaopeny_ymca360_livestreams.loader:
+    class: Drupal\yusaopeny_ymca360_livestreams\syncer\Loader
+    arguments:
+      - '@yusaopeny_ymca360.data_wrapper'
+      - '@yusaopeny_ymca360.mapping_repository'
+      - '@entity_type.manager'
+      - '@logger.channel.yusaopeny_ymca360_syncer'

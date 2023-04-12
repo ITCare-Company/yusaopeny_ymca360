@@ -1,0 +1,20 @@
+services:
+  yusaopeny_ymca360.y360_client:
+    class: Drupal\yusaopeny_ymca360\Y360Client
+    arguments:
+      - '@http_client'
+      - '@config.factory'
+      - '@logger.channel.yusaopeny_ymca360_syncer'
+
+  yusaopeny_ymca360.mapping_repository:
+    class: Drupal\yusaopeny_ymca360\Y360MappingRepository
+    arguments:
+      - '@entity_type.manager'
+      - '@logger.channel.yusaopeny_ymca360_syncer'
+
+  yusaopeny_ymca360.data_wrapper:
+    class: Drupal\yusaopeny_ymca360\syncer\DataWrapper
+
+  logger.channel.yusaopeny_ymca360_syncer:
+    parent: logger.channel_base
+    arguments: ['yusaopeny_ymca360_syncer']

@@ -1,0 +1,18 @@
+<?php
+
+/**
+ * @file
+ * YMCA360 Integration: live streams schedule routines.
+ */
+
+/**
+ * Implements hook_cron().
+ */
+function yusaopeny_ymca360_livestreams_cron() {
+  $config = \Drupal::config('yusaopeny_ymca360.settings');
+  if (!$config->get('cron.enable_cron')) {
+    return;
+  }
+  \Drupal::service('ymca_sync.syncer')
+    ->run('yusaopeny_ymca360_livestreams.syncer', 'proceed');
+}

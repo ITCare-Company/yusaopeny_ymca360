@@ -1,0 +1,11 @@
+administer yusaopeny_ymca360 configuration:
+  title: 'Administer yusaopeny_ymca360 configuration'
+  description: ''
+  restrict access: true
+administer yusaopeny_ymca360 location mapping:
+  title: 'Administer yusaopeny_ymca360 configuration'
+  description: ''
+  restrict access: true
+access yusaopeny_ymca360 mapping overview:
+  title: 'Access yusaopeny_ymca360 mapping overview'
+  restrict access: true

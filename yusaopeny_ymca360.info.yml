@@ -1,0 +1,7 @@
+name: 'YMCA360 Integration'
+type: module
+description: 'Integration with YMCA360 Platform'
+package: 'YMCA'
+core_version_requirement: ^8 || ^9 || ^10
+dependencies:
+  - drupal:ymca_sync
