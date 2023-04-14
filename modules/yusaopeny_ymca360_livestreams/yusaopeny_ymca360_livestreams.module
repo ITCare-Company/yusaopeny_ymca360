@@ -9,7 +9,7 @@
  * Implements hook_cron().
  */
 function yusaopeny_ymca360_livestreams_cron() {
-  $config = \Drupal::config('yusaopeny_ymca360.settings');
+  $config = \Drupal::config('yusaopeny_ymca360_livestreams.settings');
   if (!$config->get('cron.enable_cron')) {
     return;
   }

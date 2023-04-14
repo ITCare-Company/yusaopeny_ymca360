@@ -5,6 +5,7 @@ namespace Drupal\yusaopeny_ymca360;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Logger\LoggerChannelInterface;
+use Exception;
 use GuzzleHttp\Client;
 
 /**
@@ -12,7 +13,12 @@ use GuzzleHttp\Client;
  */
 class Y360Client {
 
-  const API_URI = 'https://staging.ymca360.org/api/external/v1/schedules';
+  /**
+   * API Url from configuration.
+   *
+   * @var string
+   */
+  protected $api_url;
 
   /**
    * The http client.
@@ -42,6 +48,25 @@ class Y360Client {
     $this->client = $client;
     $this->config = $configFactory->get('yusaopeny_ymca360.settings');
     $this->logger = $logger;
+    $this->api_url = $this->config->get('api_url') ?? 'https://staging.ymca360.org/api/external/v1/schedules';
+  }
+
+  /**
+   * Verifies credentials by doing test request to the YMCA360 API.
+   *
+   * @return boolean
+   *
+   * @throws \Exception
+   */
+  public function verifyCredentials($creds) {
+    try {
+      $this->doRequest(['size' => 1], ['auth' => array_values($creds)]);
+    }
+    catch (Exception $e) {
+      return FALSE;
+    }
+
+    return TRUE;
   }
 
   /**
@@ -87,23 +112,23 @@ class Y360Client {
    * @return array
    *   Array with data from YMCA360 API.
    */
-  private function doRequest(array $params): array {
-    $options = [
+  private function doRequest(array $params, array $options = []): array {
+    $options = array_merge([
       'headers' => [
         'Accept' => 'application/json',
       ],
       'auth' => $this->getAuth(),
       'query' => $params,
       'timeout' => 60,
-    ];
+    ], $options);
 
     $query_string = http_build_query($params);
     $this->logger->info('Sending request to %uri', [
-      '%uri' => self::API_URI . '?' . $query_string,
+      '%uri' => $this->api_url . '?' . $query_string,
     ]);
 
     try {
-      $response = $this->client->get(self::API_URI, $options);
+      $response = $this->client->get($this->api_url, $options);
       $content = $response->getBody()->getContents();
       $json = json_decode($content, TRUE, JSON_THROW_ON_ERROR);
     }
@@ -121,7 +146,7 @@ class Y360Client {
   /**
    * Generates Basic Auth digest.
    *
-   * @return string
+   * @return array<string>
    *   Encoded basic auth string.
    */
   protected function getAuth() {

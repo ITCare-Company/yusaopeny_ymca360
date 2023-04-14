@@ -1,0 +1,8 @@
+yusaopeny_ymca360_livestreams.settings_form:
+  path: '/admin/config/system/yusaopeny-ymca360/livestreams-settings'
+  defaults:
+    _title: 'YMCA360 Integration - Livestreams settings'
+    _form: 'Drupal\yusaopeny_ymca360_livestreams\Form\SettingsForm'
+  requirements:
+    _permission: 'administer yusaopeny_ymca360 configuration'
+

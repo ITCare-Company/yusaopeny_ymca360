@@ -6,6 +6,7 @@ use Drupal\Component\Datetime\DateTimePlus;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Logger\LoggerChannelInterface;
+use Drupal\Core\State\StateInterface;
 use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
 use Drupal\paragraphs\Entity\Paragraph;
@@ -17,6 +18,8 @@ use Drupal\yusaopeny_ymca360\Y360MappingRepository;
  * @package Drupal\yusaopeny_ymca360.
  */
 abstract class LoaderBase implements LoaderInterface {
+
+  const DEFAULT_ACTIVITY_CATEGORY = 63640;
 
   /**
    * DataWrapper.
@@ -53,15 +56,31 @@ abstract class LoaderBase implements LoaderInterface {
    */
   protected LoggerChannelInterface $logger;
 
+
+  /**
+   * Drupal State service.
+   *
+   * @var \Drupal\Core\State\StateInterface
+   */
+  protected StateInterface $state;
+
   /**
    * Loader class constructor.
    */
-  public function __construct(DataWrapper $data_wrapper, Y360MappingRepository $repository, EntityTypeManagerInterface $entity_type_manager, LoggerChannelInterface $logger) {
+  public function __construct(
+    DataWrapper $data_wrapper,
+    Y360MappingRepository $repository,
+    EntityTypeManagerInterface $entity_type_manager,
+    LoggerChannelInterface $logger,
+    StateInterface $state
+  )
+  {
     $this->dataWrapper = $data_wrapper;
     $this->repository = $repository;
     $this->entityTypeManager = $entity_type_manager;
     $this->nodeStorage = $this->entityTypeManager->getStorage('node');
     $this->logger = $logger;
+    $this->state = $state;
   }
 
   /**
@@ -334,14 +353,11 @@ abstract class LoaderBase implements LoaderInterface {
    *
    * @throws \Drupal\Core\Entity\EntityStorageException
    */
-  protected function getActivity(string $category): int {
-    // @todo Fix: Hardcoded Activity name for now.
-    $category = 'InStudio (YMCA360 Virtual Instructor)';
-
+  protected function getActivity(string $activityName): int {
     // Try to get existing activity.
     $existingActivities = $this->nodeStorage
       ->getQuery()
-      ->condition('title', $category)
+      ->condition('title', $activityName)
       ->condition('type', 'activity')
       ->accessCheck(FALSE)
       ->execute();
@@ -355,14 +371,20 @@ abstract class LoaderBase implements LoaderInterface {
       'uid' => 1,
       'lang' => 'und',
       'type' => 'activity',
-      'title' => $category,
+      'title' => $activityName,
       'moderation_state' => 'published',
-      // @todo Fix: we set to 'Low Impact' sub-program for now. Replace with config or dynamic selection.
-      'field_activity_category' => [['target_id' => 63640]],
+      'field_activity_category' => [['target_id' => $this->getActivityCategory()]],
     ]);
     $activity->setPublished();
     $activity->save();
     return $activity->id();
   }
+
+  /**
+   * Returns Activity Category Node id stored into state variable.
+   *
+   * @return int
+   */
+  abstract protected function getActivityCategory();
 
 }

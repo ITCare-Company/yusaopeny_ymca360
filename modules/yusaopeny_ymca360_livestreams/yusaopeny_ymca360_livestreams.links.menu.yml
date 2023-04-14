@@ -1,0 +1,6 @@
+yusaopeny_ymca360_livestreams.settings_form:
+  title: YMCA360 Integration - Livestreams settings
+  description: Configure YMCA360 Integration - Livestreams settings.
+  parent: yusaopeny_ymca360.admin
+  route_name: yusaopeny_ymca360_livestreams.settings_form
+  weight: 10

@@ -2,13 +2,57 @@
 
 namespace Drupal\yusaopeny_ymca360\Form;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\State\StateInterface;
+use Drupal\Core\Url;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Configure YMCA360 Integration settings for this site.
  */
 class SettingsForm extends ConfigFormBase {
+
+  /**
+   * Drupal State service.
+   *
+   * @var \Drupal\Core\State\StateInterface
+   */
+  protected $state;
+
+  /**
+   * Module Handler service.
+   *
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
+   */
+  protected $module_handler;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct(
+    ConfigFactoryInterface $config_factory,
+    StateInterface $state,
+    ModuleHandlerInterface $module_handler
+  )
+  {
+    $this->state = $state;
+    $this->module_handler = $module_handler;
+    parent::__construct($config_factory);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('config.factory'),
+      $container->get('state'),
+      $container->get('module_handler'),
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -28,6 +72,24 @@ class SettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
+    if ($this->module_handler->moduleExists('yusaopeny_ymca360_instudio')) {
+      if (!$this->state->get('yusaopeny_ymca360_instudio.program_subcategory', NULL)) {
+        $this->messenger()->addError(
+          $this->t('Please set Program Subcategory for Instudio Activities to be imported <a href="@url">here</a>.',
+            ['@url' => Url::fromRoute('yusaopeny_ymca360_instudio.settings_form')->toString()])
+        );
+      }
+    }
+
+    if ($this->module_handler->moduleExists('yusaopeny_ymca360_livestreams')) {
+      if (!$this->state->get('yusaopeny_ymca360_livestreams.program_subcategory', NULL)) {
+        $this->messenger()->addError(
+          $this->t('Please set Program Subcategory for Livestream Activities to be imported <a href="@url">here</a>.',
+            ['@url' => Url::fromRoute('yusaopeny_ymca360_livestreams.settings_form')->toString()])
+        );
+      }
+    }
+
     $config = $this->config('yusaopeny_ymca360.settings');
     $form['credentials'] = [
       '#type' => 'details',
@@ -47,18 +109,6 @@ class SettingsForm extends ConfigFormBase {
       '#title' => $this->t('Password'),
       '#default_value' => $config->get('credentials.password'),
       '#required' => TRUE,
-    ];
-
-    $form['cron'] = [
-      '#type' => 'details',
-      '#open' => FALSE,
-      '#title' => $this->t('CRON options'),
-      '#tree' => TRUE,
-    ];
-    $form['cron']['enable_cron'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Enable CRON Job'),
-      '#default_value' => $config->get('cron.enable_cron'),
     ];
 
     $form['schedule'] = [
@@ -81,10 +131,22 @@ class SettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    $creds = $form_state->getValue('credentials');
+    $valid = \Drupal::service('yusaopeny_ymca360.y360_client')->verifyCredentials($creds);
+    if (!$valid) {
+      $form_state->setErrorByName('credentials', $this->t('Credentials are not valid.'));
+    }
+
+    parent::validateForm($form, $form_state);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $this->config('yusaopeny_ymca360.settings')
       ->set('credentials', $form_state->getValue('credentials'))
-      ->set('cron', $form_state->getValue('cron'))
       ->set('schedule', $form_state->getValue('schedule'))
       ->save();
     parent::submitForm($form, $form_state);
