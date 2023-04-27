@@ -261,7 +261,7 @@ abstract class LoaderBase implements LoaderInterface {
         }
       }, $locations_mapping);
     }
-    return $map[$branch_id];
+    return $map[$branch_id] ?? NULL;
   }
 
   /**

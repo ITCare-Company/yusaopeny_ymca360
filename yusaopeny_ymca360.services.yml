@@ -15,6 +15,15 @@ services:
   yusaopeny_ymca360.data_wrapper:
     class: Drupal\yusaopeny_ymca360\syncer\DataWrapper
 
+  yusaopeny_ymca360.loader:
+    class: Drupal\yusaopeny_ymca360\syncer\LoaderBase
+    arguments:
+      - '@yusaopeny_ymca360.data_wrapper'
+      - '@yusaopeny_ymca360.mapping_repository'
+      - '@entity_type.manager'
+      - '@logger.channel.yusaopeny_ymca360_syncer'
+      - '@state'
+
   logger.channel.yusaopeny_ymca360_syncer:
     parent: logger.channel_base
     arguments: ['yusaopeny_ymca360_syncer']

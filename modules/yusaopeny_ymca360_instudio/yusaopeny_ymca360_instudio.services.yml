@@ -21,10 +21,7 @@ services:
       - '@yusaopeny_ymca360.data_wrapper'
       - '@yusaopeny_ymca360.mapping_repository'
       - '@logger.channel.yusaopeny_ymca360_syncer'
+
   yusaopeny_ymca360_instudio.loader:
+    parent: yusaopeny_ymca360.loader
     class: Drupal\yusaopeny_ymca360_instudio\syncer\Loader
-    arguments:
-      - '@yusaopeny_ymca360.data_wrapper'
-      - '@yusaopeny_ymca360.mapping_repository'
-      - '@entity_type.manager'
-      - '@logger.channel.yusaopeny_ymca360_syncer'

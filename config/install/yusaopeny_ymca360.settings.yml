@@ -2,5 +2,7 @@ api_url: ''
 credentials:
   user: ''
   password: ''
-cron:
-  enable_cron: 0
+schedule:
+  schedules:
+    primary: primary
+    secondary: 0

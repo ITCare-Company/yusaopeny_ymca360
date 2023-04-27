@@ -10,7 +10,7 @@
  */
 function yusaopeny_ymca360_instudio_install() {
   $config = \Drupal::configFactory()->getEditable('ymca_sync.settings');
-  $active_syncers = $config->get('active_syncers');
+  $active_syncers = $config->get('active_syncers') ?? [];
   $active_syncers[] = 'yusaopeny_ymca360_instudio.syncer';
   $config->set('active_syncers', $active_syncers);
   $config->save();
@@ -21,7 +21,7 @@ function yusaopeny_ymca360_instudio_install() {
  */
 function yusaopeny_ymca360_instudio_uninstall() {
   $config = \Drupal::configFactory()->getEditable('ymca_sync.settings');
-  $active_syncers = $config->get('active_syncers');
+  $active_syncers = $config->get('active_syncers') ?? [];
   $active_syncers = array_filter($active_syncers, function ($value) {
     return $value !== 'yusaopeny_ymca360_instudio.syncer';
   });
