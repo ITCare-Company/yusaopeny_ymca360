@@ -124,6 +124,19 @@ class SettingsForm extends ConfigFormBase {
       '#options' => $this->getScheduleOptions(),
       '#default_value' => $config->get('schedule.schedules'),
     ];
+    $form['limit'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Import Limit'),
+      '#required' => FALSE,
+      '#options' => [
+        0 => $this->t('No limit'),
+        50 => $this->t('50 records'),
+        100 => $this->t('100 records'),
+        250 => $this->t('250 records'),
+        500 => $this->t('500 records'),
+      ],
+      '#default_value' => $config->get('limit')
+    ];
 
     return parent::buildForm($form, $form_state);
   }
@@ -133,9 +146,16 @@ class SettingsForm extends ConfigFormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $creds = $form_state->getValue('credentials');
-    $valid = \Drupal::service('yusaopeny_ymca360.y360_client')->verifyCredentials($creds);
-    if (!$valid) {
+    $data = \Drupal::service('yusaopeny_ymca360.y360_client')->verifyCredentials($creds);
+    if (!$data) {
       $form_state->setErrorByName('credentials', $this->t('Credentials are not valid.'));
+    }
+    else {
+      if ($data['summary']['total_items'] > 500 && !$form_state->getValue('limit')) {
+        $this->messenger()->addWarning(
+          $this->t('There are more than 500 items returned by YMCA360 API, we recommend to setup a limit for import.')
+        );
+      }
     }
 
     parent::validateForm($form, $form_state);
@@ -148,6 +168,7 @@ class SettingsForm extends ConfigFormBase {
     $this->config('yusaopeny_ymca360.settings')
       ->set('credentials', $form_state->getValue('credentials'))
       ->set('schedule', $form_state->getValue('schedule'))
+      ->set('limit', $form_state->getValue('limit'))
       ->save();
     parent::submitForm($form, $form_state);
   }

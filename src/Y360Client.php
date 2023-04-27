@@ -54,19 +54,19 @@ class Y360Client {
   /**
    * Verifies credentials by doing test request to the YMCA360 API.
    *
-   * @return boolean
+   * @return boolean|array
    *
    * @throws \Exception
    */
   public function verifyCredentials($creds) {
     try {
-      $this->doRequest(['size' => 1], ['auth' => array_values($creds)]);
+      $data = $this->doRequest(['size' => 1], ['auth' => array_values($creds)]);
     }
     catch (Exception $e) {
       return FALSE;
     }
 
-    return TRUE;
+    return $data;
   }
 
   /**
@@ -77,9 +77,9 @@ class Y360Client {
   public function getSchedules($size = 100, $filters = []) {
     $getAll = FALSE;
     $json = [];
-    if ($size === 'all') {
+    if ($size === 0) {
       $getAll = TRUE;
-      $size = 100;
+      $size = 1000;
     }
 
     $queryParams = [

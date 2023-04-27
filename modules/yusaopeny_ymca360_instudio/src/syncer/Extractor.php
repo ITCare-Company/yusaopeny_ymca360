@@ -16,7 +16,8 @@ class Extractor extends ExtractorBase implements ExtractorInterface {
   public function extract() {
     $this->logger->notice('[EXTRACTOR] Fetching data from YMCA360 API.');
 
-    $data = $this->client->getSchedules('all', [
+    $limit = $this->config->get('limit') ?? 100;
+    $data = $this->client->getSchedules($limit, [
       'kind' => [
         'In-Person Instructor',
         'InStudio (YMCA360 Virtual Instructor)',
