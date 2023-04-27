@@ -10,17 +10,13 @@ services:
       - { name: syncer }
 
   yusaopeny_ymca360_livestreams.extractor:
+    parent: yusaopeny_ymca360.extractor
     class: Drupal\yusaopeny_ymca360_livestreams\syncer\Extractor
-    arguments:
-      - '@yusaopeny_ymca360.y360_client'
-      - '@yusaopeny_ymca360.data_wrapper'
-      - '@logger.channel.yusaopeny_ymca360_syncer'
+
   yusaopeny_ymca360_livestreams.transformer:
+    parent: yusaopeny_ymca360.transformer
     class: Drupal\yusaopeny_ymca360_livestreams\syncer\Transformer
-    arguments:
-      - '@yusaopeny_ymca360.data_wrapper'
-      - '@yusaopeny_ymca360.mapping_repository'
-      - '@logger.channel.yusaopeny_ymca360_syncer'
+
   yusaopeny_ymca360_livestreams.loader:
     parent: yusaopeny_ymca360.loader
     class: Drupal\yusaopeny_ymca360_livestreams\syncer\Loader

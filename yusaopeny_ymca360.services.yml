@@ -15,6 +15,14 @@ services:
   yusaopeny_ymca360.data_wrapper:
     class: Drupal\yusaopeny_ymca360\syncer\DataWrapper
 
+  yusaopeny_ymca360.extractor:
+    class: Drupal\yusaopeny_ymca360\syncer\ExtractorBase
+    arguments:
+      - '@config.factory'
+      - '@yusaopeny_ymca360.y360_client'
+      - '@yusaopeny_ymca360.data_wrapper'
+      - '@logger.channel.yusaopeny_ymca360_syncer'
+
   yusaopeny_ymca360.loader:
     class: Drupal\yusaopeny_ymca360\syncer\LoaderBase
     arguments:
@@ -23,6 +31,13 @@ services:
       - '@entity_type.manager'
       - '@logger.channel.yusaopeny_ymca360_syncer'
       - '@state'
+
+  yusaopeny_ymca360.transformer:
+    class: Drupal\yusaopeny_ymca360\syncer\TransformerBase
+    arguments:
+      - '@yusaopeny_ymca360.data_wrapper'
+      - '@yusaopeny_ymca360.mapping_repository'
+      - '@logger.channel.yusaopeny_ymca360_syncer'
 
   logger.channel.yusaopeny_ymca360_syncer:
     parent: logger.channel_base
