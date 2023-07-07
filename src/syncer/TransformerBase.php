@@ -2,6 +2,7 @@
 
 namespace Drupal\yusaopeny_ymca360\syncer;
 
+use Drupal\Core\Cache\MemoryCache\MemoryCacheInterface;
 use Drupal\Core\Logger\LoggerChannelInterface;
 use Drupal\yusaopeny_ymca360\Y360MappingRepository;
 
@@ -34,12 +35,20 @@ abstract class TransformerBase implements TransformerInterface {
   protected LoggerChannelInterface $logger;
 
   /**
+   * The memory cache.
+   *
+   * @var \Drupal\Core\Cache\MemoryCache\MemoryCacheInterface
+   */
+  protected MemoryCacheInterface $memoryCache;
+
+  /**
    * Transformer class constructor.
    */
-  public function __construct(DataWrapper $data_wrapper, Y360MappingRepository $repository, LoggerChannelInterface $logger) {
+  public function __construct(DataWrapper $data_wrapper, Y360MappingRepository $repository, LoggerChannelInterface $logger, MemoryCacheInterface $memory_cache) {
     $this->dataWrapper = $data_wrapper;
     $this->repository = $repository;
     $this->logger = $logger;
+    $this->memoryCache = $memory_cache;
   }
 
   /**
@@ -49,14 +58,17 @@ abstract class TransformerBase implements TransformerInterface {
     $items = $this->dataWrapper->getItems();
     $items_to_update = [];
     // External items ids.
-    $external_item_ids = array_keys($items);
-    $existing_items = $this->repository->getExistingMappingIds($external_item_ids);
-    foreach ($existing_items as $existing_item) {
-      if (array_key_exists($existing_item->getY360Id(), $items)) {
-        $y360_id = $existing_item->getY360Id();
-        $items_to_update[$existing_item->id()] = $items[$y360_id];
-        unset($items[$y360_id]);
+    $ids = array_keys($items);
+    foreach (array_chunk($ids, 100) as $chunk) {
+      $mappings = $this->repository->getExistingMappingIds($chunk);
+      foreach ($mappings as $mapping) {
+        $id = $mapping->getY360Id();
+        if (md5(serialize($items[$id])) != $mapping->getHash()) {
+          $items_to_update[$mapping->id()] = $items[$id];
+        }
+        unset($items[$id]);
       }
+      $this->memoryCache->deleteAll();
     }
     $this->dataWrapper->setItemsToCreate($items);
     $this->dataWrapper->setItemsToUpdate($items_to_update);

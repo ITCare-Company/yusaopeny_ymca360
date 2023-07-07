@@ -2,42 +2,13 @@
 
 namespace Drupal\yusaopeny_ymca360_instudio\Form;
 
-use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\State\StateInterface;
-use Drupal\node\Entity\Node;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Configure YMCA360 Integration settings for this site.
  */
 class SettingsForm extends ConfigFormBase {
-
-  /**
-   * Drupal State service.
-   *
-   * @var \Drupal\Core\State\StateInterface
-   */
-  protected $state;
-
-  /**
-   * {@inheritdoc}
-   */
-  public function __construct(ConfigFactoryInterface $config_factory, StateInterface $state) {
-    $this->state = $state;
-    parent::__construct($config_factory);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function create(ContainerInterface $container) {
-    return new static(
-      $container->get('config.factory'),
-      $container->get('state'),
-    );
-  }
 
   /**
    * {@inheritdoc}
@@ -59,33 +30,15 @@ class SettingsForm extends ConfigFormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('yusaopeny_ymca360_instudio.settings');
 
-    $program_subcategory = $this->state->get('yusaopeny_ymca360_instudio.program_subcategory', NULL);
-    if ($program_subcategory) {
-      $program_subcategory = Node::load($program_subcategory);
-    }
-
-    $form['program_subcategory'] = [
-      '#type' => 'entity_autocomplete',
-      '#target_type' => 'node',
-      '#tags' => FALSE,
-      '#selection_handler' => 'default',
-      '#selection_settings' => [
-        'target_bundles' => ['program_subcategory'],
-      ],
-      '#default_value' => $program_subcategory,
-      '#title' => $this->t('Program Subcategory'),
-      '#description' => $this->t('Please specify Program Subcategory node for Activities created during sync'),
-    ];
-
     $form['cron'] = [
       '#type' => 'details',
-      '#open' => FALSE,
-      '#title' => $this->t('CRON options'),
+      '#open' => TRUE,
+      '#title' => $this->t('Automatic Sync'),
       '#tree' => TRUE,
     ];
     $form['cron']['enable_cron'] = [
       '#type' => 'checkbox',
-      '#title' => $this->t('Enable CRON Job'),
+      '#title' => $this->t('Enable sync on cron runs'),
       '#default_value' => $config->get('cron.enable_cron'),
     ];
 
@@ -99,7 +52,6 @@ class SettingsForm extends ConfigFormBase {
     $this->config('yusaopeny_ymca360_instudio.settings')
       ->set('cron', $form_state->getValue('cron'))
       ->save();
-    $this->state->set('yusaopeny_ymca360_instudio.program_subcategory', $form_state->getValue('program_subcategory'));
 
     parent::submitForm($form, $form_state);
   }

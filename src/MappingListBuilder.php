@@ -28,8 +28,8 @@ class MappingListBuilder extends EntityListBuilder {
     /** @var \Drupal\yusaopeny_ymca360\Entity\Y360Mapping $entity*/
     $row['id'] = $entity->id();
     $row['y360id'] = $entity->getY360Id();
-    $row['session'] = $entity->getSession()->toLink();
-    $row['location'] = $entity->getLocation()->toLink();
+    $row['session'] = $entity->getSession()?->toLink();
+    $row['location'] = $entity->getLocation()?->toLink();
     return $row + parent::buildRow($entity);
   }
 

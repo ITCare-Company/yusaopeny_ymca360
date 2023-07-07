@@ -20,10 +20,8 @@ class Loader extends LoaderBase implements LoaderInterface {
   /**
    * {@inheritDoc}
    */
-  protected function getActivity(string $activityName): int {
-    // @todo Fix: Hardcoded Activity name for now.
-    $activityName = 'Livestream (YMCA360 Virtual Instructor)';
-    return parent::getActivity($activityName);
+  protected function getActivity(string $activity_name): int {
+    return parent::getActivity($activity_name);
   }
 
 }

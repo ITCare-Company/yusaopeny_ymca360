@@ -31,6 +31,8 @@ services:
       - '@entity_type.manager'
       - '@logger.channel.yusaopeny_ymca360_syncer'
       - '@state'
+      - '@config.factory'
+      - '@module_handler'
 
   yusaopeny_ymca360.transformer:
     class: Drupal\yusaopeny_ymca360\syncer\TransformerBase
@@ -38,6 +40,7 @@ services:
       - '@yusaopeny_ymca360.data_wrapper'
       - '@yusaopeny_ymca360.mapping_repository'
       - '@logger.channel.yusaopeny_ymca360_syncer'
+      - '@entity.memory_cache'
 
   logger.channel.yusaopeny_ymca360_syncer:
     parent: logger.channel_base

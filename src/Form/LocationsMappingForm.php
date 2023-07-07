@@ -66,12 +66,29 @@ class LocationsMappingForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
+    $location_id = $this->config('yusaopeny_ymca360.locations_mapping')->get('virtual_location');
+    $location = NULL;
+    if ($location_id) {
+      $location = \Drupal::entityTypeManager()
+        ->getStorage('node')
+        ->load($location_id);
+    }
+    $form['virtual_location'] = [
+      '#type' => 'entity_autocomplete',
+      '#title' => $this->t('Virtual location'),
+      '#description' => $this->t('Live stream events (session nodes) will be assigned to this location. Live streams will not appear in schedules unless the location field value is set.'),
+      '#target_type' => 'node',
+      '#default_value' => $location,
+      '#selection_settings' => [
+        'target_bundles' => ['branch'],
+      ],
+    ];
+
     $form['locations'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Locations mapping'),
       '#description' => $this->t('One per line. Format: YMCA360 Location ID, Name (as Branch in Drupal). Example: 202,West YMCA'),
-      '#rows' => 30,
-      '#cols' => 50,
+      '#rows' => 15,
       '#default_value' => implode(PHP_EOL, $this->config('yusaopeny_ymca360.locations_mapping')->get('locations') ?? $this->getInitialValues()),
     ];
 
@@ -83,23 +100,34 @@ class LocationsMappingForm extends ConfigFormBase {
   /**
    * Builds branches preview form element.
    *
-   * @return string[]
+   * @return array
    *   Form element.
    */
   private function addBranchesPreview() {
     try {
       $data = $this->client->getSchedules(1);
       $data = $data['summary']['facets']['branch_ids'];
+      usort($data, fn ($a, $b) => $a['id'] <=> $b['id']);
       $data = array_map(function ($branch) {
-          return $branch['id'] . ':' . $branch['label'];
+        return sprintf("%' 5s", $branch['id']) . ' : ' . $branch['label'];
       }, $data);
+      array_unshift($data, sprintf("%' 5s", '-----') . ' : ' . '-------------');
+      array_unshift($data, sprintf("%' 5s", 'ID') . ' : ' . 'Location name');
     }
     catch (\Exception $e) {
       $data = ['Please verify your credentials'];
     }
     return [
-      '#type' => 'markup',
-      '#markup' => '<pre>' . implode(PHP_EOL, $data) . '</pre>',
+      'wrapper' => [
+        '#type' => 'details',
+        '#open' => FALSE,
+        '#title' => $this->t('YMCA360 API locations for reference'),
+        'data' => [
+          '#type' => 'html_tag',
+          '#tag' => 'pre',
+          '#value' => implode(PHP_EOL, $data),
+        ],
+      ],
     ];
   }
 
@@ -111,6 +139,7 @@ class LocationsMappingForm extends ConfigFormBase {
     $locations = explode("\r\n", $locations);
     $this->config('yusaopeny_ymca360.locations_mapping')
       ->set('locations', $locations)
+      ->set('virtual_location', $form_state->getValue('virtual_location'))
       ->save();
     parent::submitForm($form, $form_state);
   }

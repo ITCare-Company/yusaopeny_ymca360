@@ -1,6 +1,6 @@
-name: 'YMCA360 Integration - In-Person and InStudio'
+name: 'YMCA360 Integration - Schedule Sync'
 type: module
-description: 'Integration with YMCA360 Platform - pull In-Person and InStudio schedules.'
+description: 'Integration with YMCA360 Platform - pulls in In-Person and InStudio schedules.'
 package: 'YMCA'
 core_version_requirement: ^8 || ^9 || ^10
 dependencies:

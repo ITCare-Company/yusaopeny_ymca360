@@ -3,13 +3,14 @@
 namespace Drupal\yusaopeny_ymca360\syncer;
 
 use Drupal\Component\Datetime\DateTimePlus;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Logger\LoggerChannelInterface;
 use Drupal\Core\State\StateInterface;
-use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
-use Drupal\paragraphs\Entity\Paragraph;
 use Drupal\yusaopeny_ymca360\Y360MappingRepository;
 
 /**
@@ -18,8 +19,6 @@ use Drupal\yusaopeny_ymca360\Y360MappingRepository;
  * @package Drupal\yusaopeny_ymca360.
  */
 abstract class LoaderBase implements LoaderInterface {
-
-  const DEFAULT_ACTIVITY_CATEGORY = 63640;
 
   /**
    * DataWrapper.
@@ -65,6 +64,20 @@ abstract class LoaderBase implements LoaderInterface {
   protected StateInterface $state;
 
   /**
+   * The config factory.
+   *
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
+   */
+  protected ConfigFactoryInterface $configFactory;
+
+  /**
+   * The module handler.
+   *
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
+   */
+  protected ModuleHandlerInterface $moduleHandler;
+
+  /**
    * Loader class constructor.
    */
   public function __construct(
@@ -72,7 +85,9 @@ abstract class LoaderBase implements LoaderInterface {
     Y360MappingRepository $repository,
     EntityTypeManagerInterface $entity_type_manager,
     LoggerChannelInterface $logger,
-    StateInterface $state
+    StateInterface $state,
+    ConfigFactoryInterface $config_factory,
+    ModuleHandlerInterface $module_handler
   )
   {
     $this->dataWrapper = $data_wrapper;
@@ -81,6 +96,8 @@ abstract class LoaderBase implements LoaderInterface {
     $this->nodeStorage = $this->entityTypeManager->getStorage('node');
     $this->logger = $logger;
     $this->state = $state;
+    $this->configFactory = $config_factory;
+    $this->moduleHandler = $module_handler;
   }
 
   /**
@@ -99,11 +116,15 @@ abstract class LoaderBase implements LoaderInterface {
    */
   protected function createItems(): void {
     $items = $this->dataWrapper->getItemsToCreate();
-    $this->logger->info('[LOADER] There are %total schedules from api to create', [
+    $this->logger->info('[LOADER] There are %total objects to create', [
       '%total' => count($items),
     ]);
+    $_start = microtime(TRUE);
     foreach ($items as $item) {
       $this->createSession($item);
+      if (microtime(true) - $_start > 60) {
+        break;
+      }
     }
   }
 
@@ -114,11 +135,15 @@ abstract class LoaderBase implements LoaderInterface {
    */
   protected function updateItems(): void {
     $items = $this->dataWrapper->getItemsToUpdate();
-    $this->logger->info('[LOADER] There are %total schedules from api to update', [
+    $this->logger->info('[LOADER] There are %total objects to update', [
       '%total' => count($items),
     ]);
+    $_start = microtime(TRUE);
     foreach ($items as $mapping_id => $item) {
       $this->updateSession($mapping_id, $item);
+      if (microtime(true) - $_start > 60) {
+        break;
+      }
     }
   }
 
@@ -129,11 +154,15 @@ abstract class LoaderBase implements LoaderInterface {
    */
   protected function deleteItems(): void {
     $items = $this->dataWrapper->getItemsToDelete();
-    $this->logger->info('[LOADER] There are %total schedules from api to delete', [
+    $this->logger->info('[LOADER] There are %total objects to delete', [
       '%total' => count($items),
     ]);
+    $_start = microtime(TRUE);
     foreach ($items as $item_id) {
       $this->deleteSession($item_id);
+      if (microtime(true) - $_start > 60) {
+        break;
+      }
     }
   }
 
@@ -149,17 +178,14 @@ abstract class LoaderBase implements LoaderInterface {
    * @throws \Drupal\Core\Entity\EntityStorageException
    */
   protected function createSession(array $data): NodeInterface {
-    $session = Node::create([
-      'uid' => 1,
-      'lang' => 'und',
-      'type' => 'session',
-      'title' => $data['title'],
-    ]);
+    $session = $this->entityTypeManager
+      ->getStorage('node')
+      ->create(['type' => 'session']);
 
-    $location = $this->getLocation($data['branch_id']);
-
+    $session->setTitle($this->getSessionTitle($data));
     $session->set('field_session_class', $this->getClass($data));
     $session->set('field_session_time', $this->getSessionTime($data));
+    $location = $this->getLocation($data['branch_id'], $data['kind']);
     if ($location) {
       $session->set('field_session_location', ['target_id' => $location->id() ?? 0]);
     }
@@ -171,11 +197,11 @@ abstract class LoaderBase implements LoaderInterface {
     $session->set('field_wait_list_availability', $data['wait_list_availability']);
 
     $session->setUnpublished();
-    if ($data['published'] && $data['status'] === 'scheduled') {
+    if ($this->isPublishedSession($data)) {
       $session->setPublished();
     }
 
-    \Drupal::moduleHandler()->alter('yusaopeny_ymca360_session', $session, $data);
+    $this->moduleHandler->alter('yusaopeny_ymca360_session', $session, $data);
 
     $session->save();
     $this->repository->create($data, $session, $location);
@@ -196,10 +222,17 @@ abstract class LoaderBase implements LoaderInterface {
   protected function updateSession($mapping_id, array $item): void {
     /** @var \Drupal\yusaopeny_ymca360\Entity\Y360Mapping $mapping */
     $mapping = $this->repository->getStorage()->load($mapping_id);
+    /** @var \Drupal\node\NodeInterface $session */
     $session = $mapping->getSession();
-    $location = $mapping->getLocation();
+    if (!$session) {
+      $session = $this->entityTypeManager
+        ->getStorage('node')
+        ->create(['type' => 'session']);
+    }
+    $session->setTitle($this->getSessionTitle($item));
     $session->set('field_session_class', $this->getClass($item));
     $session->set('field_session_time', $this->getSessionTime($item));
+    $location = $this->getLocation($item['branch_id'], $item['kind']);
     if ($location) {
       $session->set('field_session_location', ['target_id' => $location->id() ?? 0]);
     }
@@ -211,15 +244,46 @@ abstract class LoaderBase implements LoaderInterface {
     $session->set('field_wait_list_availability', $item['wait_list_availability']);
 
     $session->setUnpublished();
-    if ($item['published'] && $item['status'] === 'scheduled') {
+    if ($this->isPublishedSession($item)) {
       $session->setPublished();
     }
 
-    \Drupal::moduleHandler()->alter('yusaopeny_ymca360_session', $session, $item);
+    $this->moduleHandler->alter('yusaopeny_ymca360_session', $session, $item);
 
     $session->save();
 
     $this->repository->update($item, $session, $location);
+  }
+
+  /**
+   * Builds session title.
+   *
+   * @param array $item
+   *   Session item data.
+   *
+   * @return mixed|string
+   *   Session title.
+   */
+  protected function getSessionTitle(array $item) {
+    $title = $item['title'];
+    if ($item['status'] === 'canceled') {
+      $title = 'CANCELED: ' . $title;
+    }
+
+    return $title;
+  }
+
+  /**
+   * Checks if the session should be published.
+   *
+   * @param array $item
+   *   Session item data.
+   *
+   * @return bool
+   *   True if session is supposed to be published.
+   */
+  protected function isPublishedSession(array $item): bool {
+    return $item['published'] && in_array($item['status'], ['scheduled', 'canceled']);
   }
 
   /**
@@ -241,16 +305,26 @@ abstract class LoaderBase implements LoaderInterface {
   /**
    * Gets Location ID from mapping settings.
    *
-   * @param int $branch_id
+   * @param int|null $branch_id
    *   YMCA360 Branch ID.
+   * @param string|null $kind
+   *   YMCA360 event type.
    *
-   * @return \Drupal\node\NodeInterface|null
+   * @return \Drupal\Core\Entity\EntityInterface|null
    *   Location or NULL.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  protected function getLocation($branch_id) {
+  protected function getLocation(?int $branch_id, ?string $kind): ?EntityInterface {
     static $map = [];
+
+    if ($kind === 'Live Stream') {
+      return $this->getLivestreamLocation();
+    }
+
     if (empty($map)) {
-      $locations_mapping = \Drupal::config('yusaopeny_ymca360.locations_mapping')->get('locations') ?? [];
+      $locations_mapping = $this->configFactory->get('yusaopeny_ymca360.locations_mapping')->get('locations') ?? [];
       array_map(function ($item) use (&$map) {
         $pieces = explode(',', $item);
         $location = $this->nodeStorage->loadByProperties(['title' => $pieces[1]]);
@@ -263,6 +337,23 @@ abstract class LoaderBase implements LoaderInterface {
     }
     return $map[$branch_id] ?? NULL;
   }
+
+  /**
+   * Returns the Livestream location.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface|null
+   *   The virtual location entity if set.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   */
+  public function getLivestreamLocation(): ?EntityInterface {
+    if (!$id = $this->configFactory->get('yusaopeny_ymca360.locations_mapping')->get('virtual_location')) {
+      return NULL;
+    }
+    return $this->nodeStorage->load($id);
+  }
+
 
   /**
    * Creates Session Time paragraph.
@@ -279,14 +370,14 @@ abstract class LoaderBase implements LoaderInterface {
     $day = (new DateTimePlus($data['start_at']))->format('l');
 
     $paragraphs = [];
-    $paragraph = Paragraph::create(['type' => 'session_time']);
+    $paragraph = $this->entityTypeManager
+      ->getStorage('paragraph')
+      ->create(['type' => 'session_time']);
     $paragraph->set('field_session_time_days', [strtolower($day)]);
-    $paragraph->set('field_session_time_date',
-      [
-        'value' => $this->repository->formatIsoDate($data['start_at']),
-        'end_value' => $this->repository->formatIsoDate($data['end_at']),
-      ]
-    );
+    $paragraph->set('field_session_time_date', [
+      'value' => $this->repository->formatIsoDate($data['start_at']),
+      'end_value' => $this->repository->formatIsoDate($data['end_at']),
+    ]);
     $paragraph->isNew();
     $paragraph->save();
 
@@ -310,9 +401,9 @@ abstract class LoaderBase implements LoaderInterface {
    * @throws \Drupal\Core\Entity\EntityStorageException
    */
   protected function getClass(array $class) {
-    $activity_id = $this->getActivity($class['category_name']);
+    $activity_id = $this->getActivity($class['category_name'], (int) $class['schedule_id']);
     // Try to find class.
-    $existingClasses = $this->nodeStorage
+    $existing_classes = $this->nodeStorage
       ->getQuery()
       ->condition('type', 'class')
       ->condition('title', $class['title'])
@@ -320,16 +411,14 @@ abstract class LoaderBase implements LoaderInterface {
       ->accessCheck(FALSE)
       ->execute();
 
-    if (!empty($existingClasses)) {
-      $class_id = reset($existingClasses);
+    if (!empty($existing_classes)) {
+      $class_id = reset($existing_classes);
       /** @var \Drupal\node\Entity\Node $class*/
       $class = $this->nodeStorage->load($class_id);
     }
     else {
       $class = $this->nodeStorage
         ->create([
-          'uid' => 1,
-          'lang' => 'und',
           'type' => 'class',
           'title' => $class['title'],
           'moderation_state' => 'published',
@@ -345,20 +434,23 @@ abstract class LoaderBase implements LoaderInterface {
   /**
    * Gets or creates Activity node.
    *
-   * @param string $category
-   *   Activity name to look for or create from.
+   * @param string $activity_name
+   *   The activity name.
+   * @param int $schedule_id
+   *   The source schedule ID.
    *
    * @return int
    *   Activity node ID.
    *
    * @throws \Drupal\Core\Entity\EntityStorageException
    */
-  protected function getActivity(string $activityName): int {
+  protected function getActivity(string $activity_name, int $schedule_id): int {
     // Try to get existing activity.
     $existingActivities = $this->nodeStorage
       ->getQuery()
-      ->condition('title', $activityName)
+      ->condition('title', $activity_name)
       ->condition('type', 'activity')
+      ->condition('field_activity_category', $this->getActivityCategory($schedule_id))
       ->accessCheck(FALSE)
       ->execute();
 
@@ -368,12 +460,10 @@ abstract class LoaderBase implements LoaderInterface {
 
     // No activities found. Create one.
     $activity = $this->nodeStorage->create([
-      'uid' => 1,
-      'lang' => 'und',
       'type' => 'activity',
-      'title' => $activityName,
+      'title' => $activity_name,
       'moderation_state' => 'published',
-      'field_activity_category' => [['target_id' => $this->getActivityCategory()]],
+      'field_activity_category' => [['target_id' => $this->getActivityCategory($schedule_id)]],
     ]);
     $activity->setPublished();
     $activity->save();
@@ -383,8 +473,14 @@ abstract class LoaderBase implements LoaderInterface {
   /**
    * Returns Activity Category Node id stored into state variable.
    *
+   * @param int $schedule_id
+   *   The source schedule ID.
+   *
    * @return int
    */
-  abstract protected function getActivityCategory();
+  protected function getActivityCategory(int $schedule_id): int {
+    $config = $this->configFactory->get('yusaopeny_ymca360.settings')->get('schedule.schedules');
+    return (int) $config[$schedule_id]['subcategory'] ?? 0;
+  }
 
 }

@@ -1,3 +1,11 @@
+yusaopeny_ymca360.settings_form:
+  route_name: yusaopeny_ymca360.settings_form
+  base_route: yusaopeny_ymca360.settings_form
+  title: Settings
+yusaopeny_ymca360.locations_mapping:
+  route_name: yusaopeny_ymca360.locations_mapping_form
+  base_route: yusaopeny_ymca360.settings_form
+  title: 'Locations mapping'
 entity.y360_mapping.view:
   title: View
   route_name: entity.y360_mapping.canonical

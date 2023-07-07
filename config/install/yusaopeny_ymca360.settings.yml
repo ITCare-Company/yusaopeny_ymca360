@@ -1,9 +1,7 @@
-api_url: ''
+api_url: 'https://ymca360.org/api/external/v1/schedules'
 credentials:
   user: ''
   password: ''
 schedule:
-  schedules:
-    primary: primary
-    secondary: 0
+  schedules: []
 limit: 0

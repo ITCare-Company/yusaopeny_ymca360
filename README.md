@@ -40,10 +40,11 @@ CONFIGURATION
 * Configure the module in `Administration >> YMCA Website Services >>
   Integrations >> YMCA360 Integration`:
   * Specify credentials
+  * Select the schedules you want to sync to the website
+* Map YMCA 360 locations onto your websites locations in `Administration >> YMCA Website Services >>
+      Integrations >> YMCA360 Integration >> Location mapping`:
   * Set the location/branch mapping
-
-* All necessary documentation and examples of usage can be found at:
-  `admin/config/system/yusaopeny-ymca360`
+* Set the program subcategory where classes will be created
 
 MAINTAINERS
 -----------

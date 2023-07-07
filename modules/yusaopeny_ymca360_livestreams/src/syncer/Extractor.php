@@ -16,10 +16,9 @@ class Extractor extends ExtractorBase implements ExtractorInterface {
   public function extract() {
     $this->logger->notice('[EXTRACTOR] Fetching data from YMCA360 API.');
 
-    // @todo Fix: real `kind` value TBC.
     $data = $this->client->getSchedules(100, ['kind' => 'Livestreams']);
     if (!empty($data['items'])) {
-      $this->logger->debug('[EXTRACTOR] There are %total schedules from api for processing', [
+      $this->logger->debug('[EXTRACTOR] There are %total items for processing', [
         '%total' => count($data['items']),
       ]);
       $this->dataWrapper->setItems($data['items']);

@@ -1,7 +1,9 @@
-name: 'YMCA360 Integration - Live Streams'
+name: 'YMCA360 Integration - Live Streams (deprecated)'
 type: module
 description: 'Integration with YMCA360 Platform - pull Live Stream schedule'
 package: 'YMCA'
+lifecycle: deprecated
+lifecycle_link: 'https://ymca360.org/'
 core_version_requirement: ^8 || ^9 || ^10
 dependencies:
   - yusaopeny_ymca360:yusaopeny_ymca360

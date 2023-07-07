@@ -6,6 +6,7 @@ use Drupal\Component\Datetime\DateTimePlus;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Logger\LoggerChannelInterface;
+use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
 
 /**
  * YMCA360 Mapping Repository class.
@@ -152,7 +153,7 @@ class Y360MappingRepository {
    */
   public function formatIsoDate(string $iso_date): ?string {
     $date = new DateTimePlus($iso_date);
-    return $date->format('Y-m-d\TH:i:s');
+    return $date->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
   }
 
 }
