@@ -4,4 +4,9 @@ description: 'Integration with YMCA360 Platform'
 package: 'YMCA'
 core_version_requirement: ^8 || ^9 || ^10
 dependencies:
+  - drupal:openy_node_activity
+  - drupal:openy_node_category
+  - drupal:openy_node_class
+  - drupal:openy_node_program
+  - drupal:openy_node_session
   - drupal:ymca_sync
