@@ -1,0 +1,4 @@
+yusaopeny_ymca360_instudio.settings_form:
+  route_name: yusaopeny_ymca360_instudio.settings_form
+  base_route: yusaopeny_ymca360.settings_form
+  title: 'Schedule sync'

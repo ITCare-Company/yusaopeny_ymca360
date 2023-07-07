@@ -1,6 +1,6 @@
 yusaopeny_ymca360_instudio.settings_form:
-  title: YMCA360 Integration - In-Person and InStudio settings
-  description: Configure YMCA360 Integration - In-Person and InStudio settings.
+  title: Schedule sync
+  description: Enable of disable synchronization.
   parent: yusaopeny_ymca360.admin
   route_name: yusaopeny_ymca360_instudio.settings_form
   weight: 10

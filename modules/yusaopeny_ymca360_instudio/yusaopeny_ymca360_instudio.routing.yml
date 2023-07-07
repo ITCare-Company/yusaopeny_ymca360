@@ -1,8 +1,7 @@
 yusaopeny_ymca360_instudio.settings_form:
   path: '/admin/config/system/yusaopeny-ymca360/instudio-settings'
   defaults:
-    _title: 'YMCA360 Integration - In-Person and InStudio settings'
+    _title: 'YMCA360 Integration - Schedule Sync settings'
     _form: 'Drupal\yusaopeny_ymca360_instudio\Form\SettingsForm'
   requirements:
     _permission: 'administer yusaopeny_ymca360 configuration'
-
