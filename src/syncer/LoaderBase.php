@@ -194,7 +194,9 @@ abstract class LoaderBase implements LoaderInterface {
     $session->set('field_session_description', $data['description']);
     $session->set('field_session_min_age', $data['min_age']);
     $session->set('field_session_max_age', $data['max_age']);
-    $session->set('field_wait_list_availability', $data['wait_list_availability']);
+    if ($session->hasField('field_wait_list_availability')) {
+      $session->set('field_wait_list_availability', $data['wait_list_availability']);
+    }
 
     $session->setUnpublished();
     if ($this->isPublishedSession($data)) {
@@ -241,7 +243,9 @@ abstract class LoaderBase implements LoaderInterface {
     $session->set('field_session_description', $item['description']);
     $session->set('field_session_min_age', $item['min_age']);
     $session->set('field_session_max_age', $item['max_age']);
-    $session->set('field_wait_list_availability', $item['wait_list_availability']);
+    if ($session->hasField('field_wait_list_availability')) {
+      $session->set('field_wait_list_availability', $item['wait_list_availability']);
+    }
 
     $session->setUnpublished();
     if ($this->isPublishedSession($item)) {

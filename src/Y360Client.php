@@ -164,7 +164,7 @@ class Y360Client {
     try {
       $response = $this->client->get($this->api_url, $options);
       $content = $response->getBody()->getContents();
-      $json = json_decode($content, TRUE, JSON_THROW_ON_ERROR);
+      $json = json_decode($content, TRUE, 512, JSON_THROW_ON_ERROR);
     }
     catch (\Exception $e) {
       $this->logger->warning('Unable to get data from YMCA360 API. %code - %msg', [

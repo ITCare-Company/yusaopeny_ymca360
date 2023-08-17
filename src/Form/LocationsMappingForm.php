@@ -44,7 +44,7 @@ class LocationsMappingForm extends ConfigFormBase {
     return new static(
       $container->get('config.factory'),
       $container->get('entity_type.manager'),
-      $container->get('yusaopeny_ymca360.y360_client'),
+      $container->get('yusaopeny_ymca360.y360_client')
     );
   }
 
@@ -107,7 +107,9 @@ class LocationsMappingForm extends ConfigFormBase {
     try {
       $data = $this->client->getSchedules(1);
       $data = $data['summary']['facets']['branch_ids'];
-      usort($data, fn ($a, $b) => $a['id'] <=> $b['id']);
+      usort($data, function ($a, $b) {
+        return $a['id'] <=> $b['id'];
+      });
       $data = array_map(function ($branch) {
         return sprintf("%' 5s", $branch['id']) . ' : ' . $branch['label'];
       }, $data);

@@ -80,6 +80,7 @@ associated with live stream classes.
     * specify the YMCA 360 location ID and local Open Y branch names separated by
 a comma;
     * find the YMCA 360 location IDs below the mapping field.
+* If you're using a Drupal 8 based Open Y release install the Open Y Session Instance module. 
 * Enable the sync on the Schedule sync tab. 
 
 RECOMMENDED MODULES
