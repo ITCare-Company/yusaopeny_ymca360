@@ -18,3 +18,10 @@ function yusaopeny_ymca360_node_delete(EntityInterface $node) {
   $mappings = $storage->loadByProperties(['session' => $node->id()]);
   $storage->delete($mappings);
 }
+
+/**
+ * Implements hook_cron().
+ */
+function yusaopeny_ymca360_cron() {
+  \Drupal::service('yusaopeny_ymca360.cleaner')->cleanup();
+}

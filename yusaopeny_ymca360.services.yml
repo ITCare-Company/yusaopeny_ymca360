@@ -42,6 +42,12 @@ services:
       - '@logger.channel.yusaopeny_ymca360_syncer'
       - '@entity.memory_cache'
 
+  yusaopeny_ymca360.cleaner:
+    class: Drupal\yusaopeny_ymca360\Y360Cleaner
+    arguments:
+      - '@entity_type.manager'
+      - '@datetime.time'
+
   logger.channel.yusaopeny_ymca360_syncer:
     parent: logger.channel_base
     arguments: ['yusaopeny_ymca360_syncer']
