@@ -371,7 +371,8 @@ abstract class LoaderBase implements LoaderInterface {
    * @throws \Drupal\Core\Entity\EntityStorageException
    */
   protected function getSessionTime(array $data) {
-    $day = (new DateTimePlus($data['start_at']))->format('l');
+    $timezone = $this->configFactory->get('system.date')->get('timezone')['default'];
+    $day = (new DateTimePlus($data['start_at']))->setTimezone(new \DateTimeZone($timezone))->format('l');
 
     $paragraphs = [];
     $paragraph = $this->entityTypeManager
