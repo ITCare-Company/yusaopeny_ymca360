@@ -396,7 +396,7 @@ abstract class LoaderBase implements LoaderInterface {
   /**
    * Creates class or use existing.
    *
-   * @param array $class
+   * @param array $data
    *   Class data.
    *
    * @return \Drupal\Core\Entity\EntityInterface
@@ -404,13 +404,13 @@ abstract class LoaderBase implements LoaderInterface {
    *
    * @throws \Drupal\Core\Entity\EntityStorageException
    */
-  protected function getClass(array $class) {
-    $activity_id = $this->getActivity($class['category_name'], (int) $class['schedule_id']);
+  protected function getClass(array $data) {
+    $activity_id = $this->getActivity($data['category_name'], (int) $data['schedule_id']);
     // Try to find class.
     $existing_classes = $this->nodeStorage
       ->getQuery()
       ->condition('type', 'class')
-      ->condition('title', $class['title'])
+      ->condition('title', $data['title'])
       ->condition('field_class_activity', $activity_id)
       ->accessCheck(FALSE)
       ->execute();
@@ -419,15 +419,18 @@ abstract class LoaderBase implements LoaderInterface {
       $class_id = reset($existing_classes);
       /** @var \Drupal\node\Entity\Node $class*/
       $class = $this->nodeStorage->load($class_id);
+      $class->set('field_class_description', $data['description']);
+      $class->save();
     }
     else {
       $class = $this->nodeStorage
         ->create([
           'type' => 'class',
-          'title' => $class['title'],
+          'title' => $data['title'],
           'moderation_state' => 'published',
           'field_class_activity' => [['target_id' => $activity_id]],
         ]);
+      $class->set('field_class_description', $data['description']);
       $class->setPublished();
       $class->save();
     }
