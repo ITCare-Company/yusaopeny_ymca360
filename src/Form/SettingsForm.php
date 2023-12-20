@@ -83,24 +83,6 @@ class SettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    if ($this->module_handler->moduleExists('yusaopeny_ymca360_instudio')) {
-      if (!$this->state->get('yusaopeny_ymca360_instudio.program_subcategory', NULL)) {
-        $this->messenger()->addError(
-          $this->t('Please set Program Subcategory for Instudio Activities to be imported <a href="@url">here</a>.',
-            ['@url' => Url::fromRoute('yusaopeny_ymca360_instudio.settings_form')->toString()])
-        );
-      }
-    }
-
-    if ($this->module_handler->moduleExists('yusaopeny_ymca360_livestreams')) {
-      if (!$this->state->get('yusaopeny_ymca360_livestreams.program_subcategory', NULL)) {
-        $this->messenger()->addError(
-          $this->t('Please set Program Subcategory for Livestream Activities to be imported <a href="@url">here</a>.',
-            ['@url' => Url::fromRoute('yusaopeny_ymca360_livestreams.settings_form')->toString()])
-        );
-      }
-    }
-
     $config = $this->config('yusaopeny_ymca360.settings');
     $form['credentials'] = [
       '#type' => 'details',
