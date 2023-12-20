@@ -3,6 +3,7 @@
 namespace Drupal\yusaopeny_ymca360;
 
 use Drupal\Component\Datetime\DateTimePlus;
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Logger\LoggerChannelInterface;
@@ -30,6 +31,13 @@ class Y360MappingRepository {
   public EntityStorageInterface $storage;
 
   /**
+   * Database connection.
+   *
+   * @var \Drupal\Core\Database\Connection
+   */
+  protected Connection $connection;
+
+  /**
    * Logger channel.
    *
    * @var \Drupal\Core\Logger\LoggerChannelInterface
@@ -39,9 +47,10 @@ class Y360MappingRepository {
   /**
    * Y360MappingRepository constructor.
    */
-  public function __construct(EntityTypeManagerInterface $entityTypeManager, LoggerChannelInterface $logger) {
+  public function __construct(EntityTypeManagerInterface $entityTypeManager, Connection $connection, LoggerChannelInterface $logger) {
     $this->entityTypeManager = $entityTypeManager;
     $this->storage = $this->entityTypeManager->getStorage(self::STORAGE);
+    $this->connection = $connection;
     $this->logger = $logger;
   }
 
@@ -154,6 +163,19 @@ class Y360MappingRepository {
   public function formatIsoDate(string $iso_date): ?string {
     $date = new DateTimePlus($iso_date);
     return $date->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
+  }
+
+  /**
+   * Resets hashes for all mapping entities.
+   *
+   * Effectively enforces data updates.
+   */
+  public function resetHashes(): void {
+    $this->connection
+      ->update(self::STORAGE)
+      ->fields(['hash' => ''])
+      ->execute();
+    $this->storage->resetCache();
   }
 
 }

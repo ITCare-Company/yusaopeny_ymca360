@@ -10,6 +10,7 @@ services:
     class: Drupal\yusaopeny_ymca360\Y360MappingRepository
     arguments:
       - '@entity_type.manager'
+      - '@database'
       - '@logger.channel.yusaopeny_ymca360_syncer'
 
   yusaopeny_ymca360.data_wrapper:

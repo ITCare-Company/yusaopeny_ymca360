@@ -7,6 +7,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\yusaopeny_ymca360\Y360Client;
+use Drupal\yusaopeny_ymca360\Y360MappingRepository;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -29,12 +30,20 @@ class LocationsMappingForm extends ConfigFormBase {
   protected $client;
 
   /**
+   * Mapping repository.
+   *
+   * @var \Drupal\yusaopeny_ymca360\Y360MappingRepository
+   */
+  protected Y360MappingRepository $mappingRepository;
+
+  /**
    * Constructs a \Drupal\system\ConfigFormBase object.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entityTypeManager, Y360Client $client) {
+  public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entityTypeManager, Y360Client $client, Y360MappingRepository $repository) {
     parent::__construct($config_factory);
     $this->nodeStorage = $entityTypeManager->getStorage('node');
     $this->client = $client;
+    $this->mappingRepository = $repository;
   }
 
   /**
@@ -44,7 +53,8 @@ class LocationsMappingForm extends ConfigFormBase {
     return new static(
       $container->get('config.factory'),
       $container->get('entity_type.manager'),
-      $container->get('yusaopeny_ymca360.y360_client')
+      $container->get('yusaopeny_ymca360.y360_client'),
+      $container->get('yusaopeny_ymca360.mapping_repository')
     );
   }
 
@@ -143,6 +153,7 @@ class LocationsMappingForm extends ConfigFormBase {
       ->set('locations', $locations)
       ->set('virtual_location', $form_state->getValue('virtual_location'))
       ->save();
+    $this->mappingRepository->resetHashes();
     parent::submitForm($form, $form_state);
   }
 
