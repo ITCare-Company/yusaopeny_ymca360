@@ -433,6 +433,9 @@ abstract class LoaderBase implements LoaderInterface {
         ]);
       $class->set('field_class_description', $data['description']);
       $class->setPublished();
+
+      $this->moduleHandler->alter('yusaopeny_ymca360_class_create', $class, $data);
+
       $class->save();
     }
 
@@ -474,6 +477,9 @@ abstract class LoaderBase implements LoaderInterface {
       'field_activity_category' => [['target_id' => $this->getActivityCategory($schedule_id)]],
     ]);
     $activity->setPublished();
+
+    $this->moduleHandler->alter('yusaopeny_ymca360_activity_create', $activity);
+
     $activity->save();
     return $activity->id();
   }
