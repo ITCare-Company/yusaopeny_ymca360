@@ -3,6 +3,7 @@
 namespace Drupal\yusaopeny_ymca360_livestreams\Form;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\State\StateInterface;
@@ -24,9 +25,9 @@ class SettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function __construct(ConfigFactoryInterface $config_factory, StateInterface $state) {
+  public function __construct(ConfigFactoryInterface $config_factory, TypedConfigManagerInterface $typed_config, StateInterface $state) {
     $this->state = $state;
-    parent::__construct($config_factory);
+    parent::__construct($config_factory, $typed_config);
   }
 
   /**
