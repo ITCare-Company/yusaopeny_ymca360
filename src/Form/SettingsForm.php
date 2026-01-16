@@ -3,6 +3,7 @@
 namespace Drupal\yusaopeny_ymca360\Form;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -42,6 +43,7 @@ class SettingsForm extends ConfigFormBase {
    */
   public function __construct(
     ConfigFactoryInterface $config_factory,
+    TypedConfigManagerInterface $typed_config,
     StateInterface $state,
     ModuleHandlerInterface $module_handler,
     Y360Client $client
@@ -50,7 +52,7 @@ class SettingsForm extends ConfigFormBase {
     $this->state = $state;
     $this->module_handler = $module_handler;
     $this->client = $client;
-    parent::__construct($config_factory);
+    parent::__construct($config_factory, $typed_config);
   }
 
   /**
@@ -59,6 +61,7 @@ class SettingsForm extends ConfigFormBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('config.factory'),
+      $container->get('config.typed'),
       $container->get('state'),
       $container->get('module_handler'),
       $container->get('yusaopeny_ymca360.y360_client')
@@ -145,7 +148,7 @@ class SettingsForm extends ConfigFormBase {
         $form['schedule']['schedules'][$id]['enable'] = [
           '#type' => 'checkbox',
           '#title' => "$label ($id)",
-          '#default_value' => (bool) $schedule_mapping[$id]['enable'],
+          '#default_value' => (bool) ($schedule_mapping[$id]['enable'] ?? FALSE),
         ];
         $form['schedule']['schedules'][$id]['subcategory'] = [
           '#type' => 'entity_autocomplete',
