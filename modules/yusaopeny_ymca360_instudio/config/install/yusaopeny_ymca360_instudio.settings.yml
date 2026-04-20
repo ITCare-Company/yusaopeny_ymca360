@@ -5,3 +5,5 @@ sync:
   window_days: 14
   page_size: 500
   incremental: 0
+  orphan_delete_enabled: 0
+  max_deletes_per_run: 100

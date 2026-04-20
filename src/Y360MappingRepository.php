@@ -166,6 +166,39 @@ class Y360MappingRepository {
   }
 
   /**
+   * Loads mapping IDs whose session starts inside the given window.
+   *
+   * Used by the syncer to reconcile the extracted items against what is
+   * currently stored — anything in the window that the API no longer
+   * returns can be considered orphaned.
+   *
+   * @param int $from
+   *   Window start (UNIX timestamp, UTC).
+   * @param int $to
+   *   Window end (UNIX timestamp, UTC).
+   *
+   * @return array<int, int>
+   *   Array keyed by mapping ID, values are the external y360_id.
+   */
+  public function getMappingsInWindow(int $from, int $to): array {
+    $fromFormatted = gmdate(DateTimeItemInterface::DATETIME_STORAGE_FORMAT, $from);
+    $toFormatted = gmdate(DateTimeItemInterface::DATETIME_STORAGE_FORMAT, $to);
+    $ids = $this->storage->getQuery()
+      ->condition('start_at', $fromFormatted, '>=')
+      ->condition('start_at', $toFormatted, '<=')
+      ->accessCheck(FALSE)
+      ->execute();
+    if (empty($ids)) {
+      return [];
+    }
+    $map = [];
+    foreach ($this->storage->loadMultiple($ids) as $mapping) {
+      $map[(int) $mapping->id()] = (int) $mapping->getY360Id();
+    }
+    return $map;
+  }
+
+  /**
    * Resets hashes for all mapping entities.
    *
    * Effectively enforces data updates.

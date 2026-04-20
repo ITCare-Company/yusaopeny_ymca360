@@ -43,6 +43,24 @@ class DataWrapper implements DataWrapperInterface {
   private array $syncWindow = ['from' => NULL, 'to' => NULL];
 
   /**
+   * Whether the current extract covers the full window.
+   *
+   * FALSE when the extractor applied an updated_at filter (incremental).
+   * Consumers should not run full-window reconciliation in that mode.
+   */
+  private bool $fullFetch = TRUE;
+
+  /**
+   * Whether the orphan safety-net delete is enabled.
+   */
+  private bool $orphanDeleteEnabled = FALSE;
+
+  /**
+   * Hard cap on deletions per run (0 = unlimited).
+   */
+  private int $maxDeletesPerRun = 0;
+
+  /**
    * {@inheritDoc}
    */
   public function getItems(): array {
@@ -118,6 +136,36 @@ class DataWrapper implements DataWrapperInterface {
    */
   public function getSyncWindow(): array {
     return $this->syncWindow;
+  }
+
+  /**
+   * Marks whether the current extract covered the whole window.
+   */
+  public function setFullFetch(bool $fullFetch): void {
+    $this->fullFetch = $fullFetch;
+  }
+
+  /**
+   * TRUE when the current extract is a full-window fetch (no updated_at).
+   */
+  public function isFullFetch(): bool {
+    return $this->fullFetch;
+  }
+
+  /**
+   * Configures deletion safeguards for the current run.
+   */
+  public function setDeleteSafeguards(bool $orphanDeleteEnabled, int $maxDeletesPerRun): void {
+    $this->orphanDeleteEnabled = $orphanDeleteEnabled;
+    $this->maxDeletesPerRun = max(0, $maxDeletesPerRun);
+  }
+
+  public function isOrphanDeleteEnabled(): bool {
+    return $this->orphanDeleteEnabled;
+  }
+
+  public function getMaxDeletesPerRun(): int {
+    return $this->maxDeletesPerRun;
   }
 
 }

@@ -82,6 +82,21 @@ class SettingsForm extends ConfigFormBase {
       '#description' => $this->t('Only fetch items updated since the last sync run (API <code>updated_at</code> filter). First run after enabling still performs a full fetch. Recommended for frequent cron runs.'),
       '#default_value' => $config->get('sync.incremental') ?? 0,
     ];
+    $form['sync']['orphan_delete_enabled'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Delete orphan mappings (safety net)'),
+      '#description' => $this->t('When enabled, mappings whose occurrence falls inside the sync window but no longer appears in the API response are removed. Leave off unless you trust the API <code>status=deleted</code> signal alone and you are sure every relevant schedule is in the enabled list below.'),
+      '#default_value' => $config->get('sync.orphan_delete_enabled') ?? 0,
+    ];
+    $form['sync']['max_deletes_per_run'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Max deletes per run'),
+      '#description' => $this->t('Hard cap on deletions per sync cycle. If the delete list exceeds this, the sync logs a warning and bails out instead of mass-deleting. Protects against misconfigurations (e.g. a schedule being toggled off).'),
+      '#default_value' => $config->get('sync.max_deletes_per_run') ?? 100,
+      '#min' => 0,
+      '#max' => 100000,
+      '#step' => 10,
+    ];
 
     return parent::buildForm($form, $form_state);
   }
