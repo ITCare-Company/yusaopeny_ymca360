@@ -98,6 +98,31 @@ class SettingsForm extends ConfigFormBase {
       '#step' => 10,
     ];
 
+    $form['canceled'] = [
+      '#type' => 'details',
+      '#open' => TRUE,
+      '#title' => $this->t('Canceled sessions'),
+      '#description' => $this->t('How to represent occurrences whose upstream status is <code>canceled</code>. Deleted occurrences are always removed.'),
+      '#tree' => TRUE,
+    ];
+    $form['canceled']['title_prefix'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Title prefix'),
+      '#description' => $this->t('Prepended to the session title when the occurrence is canceled. Leave empty to keep the original title.'),
+      '#default_value' => $config->get('sync.canceled_title_prefix') ?? 'CANCELED: ',
+      '#size' => 40,
+    ];
+    $form['canceled']['publish_behavior'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Publish behavior'),
+      '#options' => [
+        'follow_api' => $this->t('Follow API <code>published</code> flag (canceled → typically unpublished)'),
+        'always_unpublish' => $this->t('Always unpublish canceled sessions'),
+        'keep_published' => $this->t('Keep canceled sessions published (show with prefix)'),
+      ],
+      '#default_value' => $config->get('sync.canceled_publish_behavior') ?? 'follow_api',
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -105,9 +130,14 @@ class SettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
+    $cancelValues = $form_state->getValue('canceled') ?? [];
+    $syncValues = $form_state->getValue('sync') ?? [];
+    $syncValues['canceled_title_prefix'] = $cancelValues['title_prefix'] ?? 'CANCELED: ';
+    $syncValues['canceled_publish_behavior'] = $cancelValues['publish_behavior'] ?? 'follow_api';
+
     $this->config('yusaopeny_ymca360_instudio.settings')
       ->set('cron', $form_state->getValue('cron'))
-      ->set('sync', $form_state->getValue('sync'))
+      ->set('sync', $syncValues)
       ->save();
 
     parent::submitForm($form, $form_state);

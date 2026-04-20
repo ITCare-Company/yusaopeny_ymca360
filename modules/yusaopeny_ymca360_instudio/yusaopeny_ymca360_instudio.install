@@ -28,3 +28,32 @@ function yusaopeny_ymca360_instudio_uninstall() {
   $config->set('active_syncers', $active_syncers);
   $config->save();
 }
+
+/**
+ * Add sync window, incremental, delete safeguards, and canceled UX settings.
+ */
+function yusaopeny_ymca360_instudio_update_10001(): string {
+  $defaults = [
+    'sync.past_days' => 7,
+    'sync.window_days' => 14,
+    'sync.page_size' => 500,
+    'sync.incremental' => 0,
+    'sync.orphan_delete_enabled' => 0,
+    'sync.max_deletes_per_run' => 100,
+    'sync.canceled_title_prefix' => 'CANCELED: ',
+    'sync.canceled_publish_behavior' => 'follow_api',
+  ];
+  $config = \Drupal::configFactory()->getEditable('yusaopeny_ymca360_instudio.settings');
+  $added = [];
+  foreach ($defaults as $key => $value) {
+    if ($config->get($key) === NULL) {
+      $config->set($key, $value);
+      $added[] = $key;
+    }
+  }
+  $config->save();
+  if (empty($added)) {
+    return 'No settings added — all were already present.';
+  }
+  return 'Added settings: ' . implode(', ', $added) . '.';
+}

@@ -7,3 +7,5 @@ sync:
   incremental: 0
   orphan_delete_enabled: 0
   max_deletes_per_run: 100
+  canceled_title_prefix: 'CANCELED: '
+  canceled_publish_behavior: follow_api

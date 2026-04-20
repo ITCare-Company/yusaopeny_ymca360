@@ -182,26 +182,7 @@ abstract class LoaderBase implements LoaderInterface {
       ->getStorage('node')
       ->create(['type' => 'session']);
 
-    $session->setTitle($this->getSessionTitle($data));
-    $session->set('field_session_class', $this->getClass($data));
-    $session->set('field_session_time', $this->getSessionTime($data));
-    $location = $this->getLocation($data['branch_id'], $data['kind']);
-    if ($location) {
-      $session->set('field_session_location', ['target_id' => $location->id() ?? 0]);
-    }
-    $session->set('field_session_room', $data['studio_name']);
-    $session->set('field_session_instructor', $data['instructor_name']);
-    $session->set('field_session_description', $data['description']);
-    $session->set('field_session_min_age', $data['min_age']);
-    $session->set('field_session_max_age', $data['max_age']);
-    if ($session->hasField('field_wait_list_availability')) {
-      $session->set('field_wait_list_availability', $data['wait_list_availability']);
-    }
-
-    $session->setUnpublished();
-    if ($this->isPublishedSession($data)) {
-      $session->setPublished();
-    }
+    $location = $this->applySessionFields($session, $data);
 
     $this->moduleHandler->alter('yusaopeny_ymca360_session', $session, $data);
 
@@ -231,32 +212,76 @@ abstract class LoaderBase implements LoaderInterface {
         ->getStorage('node')
         ->create(['type' => 'session']);
     }
-    $session->setTitle($this->getSessionTitle($item));
-    $session->set('field_session_class', $this->getClass($item));
-    $session->set('field_session_time', $this->getSessionTime($item));
-    $location = $this->getLocation($item['branch_id'], $item['kind']);
-    if ($location) {
-      $session->set('field_session_location', ['target_id' => $location->id() ?? 0]);
-    }
-    $session->set('field_session_room', $item['studio_name']);
-    $session->set('field_session_instructor', $item['instructor_name']);
-    $session->set('field_session_description', $item['description']);
-    $session->set('field_session_min_age', $item['min_age']);
-    $session->set('field_session_max_age', $item['max_age']);
-    if ($session->hasField('field_wait_list_availability')) {
-      $session->set('field_wait_list_availability', $item['wait_list_availability']);
-    }
 
-    $session->setUnpublished();
-    if ($this->isPublishedSession($item)) {
-      $session->setPublished();
-    }
+    $location = $this->applySessionFields($session, $item);
 
     $this->moduleHandler->alter('yusaopeny_ymca360_session', $session, $item);
 
     $session->save();
 
     $this->repository->update($item, $session, $location);
+  }
+
+  /**
+   * Writes all fields from an API item onto a session node.
+   *
+   * Resolved location is returned so callers can reuse it for the mapping.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface|null
+   *   Location node or NULL if unresolved.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @throws \Drupal\Core\Entity\EntityStorageException
+   */
+  protected function applySessionFields(NodeInterface $session, array $item): ?EntityInterface {
+    $session->setTitle($this->getSessionTitle($item));
+    $session->set('field_session_class', $this->getClass($item));
+    $session->set('field_session_time', $this->getSessionTime($item));
+    $session->set('field_session_room', $item['studio_name']);
+    $session->set('field_session_instructor', $item['instructor_name']);
+    $session->set('field_session_description', $item['description']);
+    $session->set('field_session_min_age', $item['min_age']);
+    $session->set('field_session_max_age', $item['max_age']);
+
+    $this->applyOptionalFields($session, $item);
+
+    $location = $this->getLocation($item['branch_id'], $item['kind']);
+    if ($location) {
+      $session->set('field_session_location', ['target_id' => $location->id() ?? 0]);
+    }
+
+    $this->applyPublishState($session, $item);
+
+    return $location;
+  }
+
+  /**
+   * Writes optional fields only when the bundle exposes them.
+   *
+   * Lets themes opt in to extra data (substitute instructor, upstream
+   * status) without forcing sites to adopt new fields.
+   */
+  protected function applyOptionalFields(NodeInterface $session, array $item): void {
+    if ($session->hasField('field_wait_list_availability')) {
+      $session->set('field_wait_list_availability', $item['wait_list_availability']);
+    }
+    if ($session->hasField('field_session_original_instructor')) {
+      $session->set('field_session_original_instructor', $item['original_instructor_name'] ?? NULL);
+    }
+    if ($session->hasField('field_session_status')) {
+      $session->set('field_session_status', $item['status'] ?? NULL);
+    }
+  }
+
+  /**
+   * Applies publish state to a session according to upstream data + config.
+   */
+  protected function applyPublishState(NodeInterface $session, array $item): void {
+    $session->setUnpublished();
+    if ($this->isPublishedSession($item)) {
+      $session->setPublished();
+    }
   }
 
   /**
@@ -270,11 +295,14 @@ abstract class LoaderBase implements LoaderInterface {
    */
   protected function getSessionTitle(array $item) {
     $title = $item['title'];
-    if ($item['status'] === 'canceled') {
-      $title = 'CANCELED: ' . $title;
+    if (($item['status'] ?? '') !== 'canceled') {
+      return $title;
     }
-
-    return $title;
+    $prefix = $this->getLoaderConfig()->get('sync.canceled_title_prefix');
+    if ($prefix === NULL) {
+      $prefix = 'CANCELED: ';
+    }
+    return $prefix . $title;
   }
 
   /**
@@ -287,7 +315,43 @@ abstract class LoaderBase implements LoaderInterface {
    *   True if session is supposed to be published.
    */
   protected function isPublishedSession(array $item): bool {
-    return $item['published'] && in_array($item['status'], ['scheduled', 'canceled']);
+    $status = $item['status'] ?? '';
+    if ($status === 'deleted') {
+      return FALSE;
+    }
+    if ($status === 'canceled') {
+      return $this->shouldPublishCanceled($item);
+    }
+    return !empty($item['published']) && in_array($status, ['scheduled', 'moved'], TRUE);
+  }
+
+  /**
+   * Applies canceled-specific publish policy.
+   */
+  protected function shouldPublishCanceled(array $item): bool {
+    $behavior = $this->getLoaderConfig()->get('sync.canceled_publish_behavior') ?: 'follow_api';
+    return match ($behavior) {
+      'always_unpublish' => FALSE,
+      'keep_published' => TRUE,
+      default => !empty($item['published']),
+    };
+  }
+
+  /**
+   * Returns the submodule settings config for Loader-level UX decisions.
+   *
+   * Submodules override getSubmoduleConfigName() to point at their own
+   * settings key; the default falls back to the shared settings.
+   */
+  protected function getLoaderConfig() {
+    return $this->configFactory->get($this->getSubmoduleConfigName());
+  }
+
+  /**
+   * Returns the submodule settings config name. Override in subclasses.
+   */
+  protected function getSubmoduleConfigName(): string {
+    return 'yusaopeny_ymca360.settings';
   }
 
   /**
