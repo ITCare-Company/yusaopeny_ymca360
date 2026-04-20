@@ -84,32 +84,33 @@ class Y360Client {
   }
 
   /**
-   * Fetches schedules within a time window.
+   * Fetches schedules within a time window using API-native filters.
    *
-   * API has no server-side date filter, so we paginate ascending by start_at
-   * and break as soon as we pass the window's upper bound.
+   * Uses the documented /schedules filters (start_at, end_at, scheduled_from)
+   * so the server returns only the slice we care about. See
+   * https://github.com/YMCA360/external-api-docs/blob/main/docs/schedules.md
+   *
+   * Items with status `canceled` and `deleted` are included — the caller is
+   * responsible for reconciling them (canceled → unpublish, deleted → remove).
    *
    * @param int $fromTimestamp
-   *   Window start (UNIX timestamp, UTC). Items before this are discarded.
+   *   Window start (UNIX timestamp, UTC). Maps to API `start_at` filter and
+   *   to `scheduled_from` when past items must be included (API hides past
+   *   items by default).
    * @param int $toTimestamp
-   *   Window end (UNIX timestamp, UTC). Pagination stops once an item's
-   *   start_at exceeds this value.
+   *   Window end (UNIX timestamp, UTC). Maps to API `end_at` filter.
    * @param int $pageSize
-   *   Page size used for API pagination.
+   *   API pagination page size.
+   * @param int|null $updatedSince
+   *   If provided, restricts results to items updated at or after this
+   *   UNIX timestamp (API `updated_at` filter) for incremental syncs.
    *
-   * @return array
-   *   ['items' => [...], 'stats' => ['pages_fetched' => N, 'api_total' => N, 'window_items' => N]]
+   * @return array{items: array, stats: array}
+   *   items: flat list of schedule occurrences.
+   *   stats: ['pages_fetched' => N, 'api_total' => N, 'window_items' => N].
    */
-  public function getSchedulesWindowed(int $fromTimestamp, int $toTimestamp, int $pageSize = 500): array {
-    $queryParams = [
-      'size' => $pageSize,
-      'page' => 0,
-      'sort_by' => 'start_at',
-    ];
-    $scheduleIds = $this->getEnabledScheduleIds();
-    if (!empty($scheduleIds)) {
-      $queryParams['schedule_id'] = $scheduleIds;
-    }
+  public function getSchedulesWindowed(int $fromTimestamp, int $toTimestamp, int $pageSize = 500, ?int $updatedSince = NULL): array {
+    $queryParams = $this->buildWindowedQuery($fromTimestamp, $toTimestamp, $pageSize, $updatedSince);
 
     $items = [];
     $totalPages = 1;
@@ -128,14 +129,7 @@ class Y360Client {
       if (empty($pageItems)) {
         break;
       }
-
-      [$windowItems, $shouldStop] = $this->filterPageByWindow($pageItems, $fromTimestamp, $toTimestamp);
-      if (!empty($windowItems)) {
-        $items = array_merge($items, $windowItems);
-      }
-      if ($shouldStop) {
-        break;
-      }
+      $items = array_merge($items, $pageItems);
 
       $queryParams['page']++;
       usleep(100000);
@@ -149,6 +143,30 @@ class Y360Client {
         'window_items' => count($items),
       ],
     ];
+  }
+
+  /**
+   * Builds the query params for a windowed schedules fetch.
+   */
+  protected function buildWindowedQuery(int $fromTimestamp, int $toTimestamp, int $pageSize, ?int $updatedSince): array {
+    $query = [
+      'size' => $pageSize,
+      'page' => 0,
+      'sort_by' => 'start_at',
+      'start_at' => $fromTimestamp,
+      'end_at' => $toTimestamp,
+      // API hides past items by default (scheduled_from defaults to "now").
+      // Override so the full window is returned regardless of current time.
+      'scheduled_from' => $fromTimestamp,
+    ];
+    if ($updatedSince !== NULL) {
+      $query['updated_at'] = $updatedSince;
+    }
+    $scheduleIds = $this->getEnabledScheduleIds();
+    if (!empty($scheduleIds)) {
+      $query['schedule_id'] = $scheduleIds;
+    }
+    return $query;
   }
 
   /**
@@ -197,44 +215,6 @@ class Y360Client {
       }
     }
     return $ids;
-  }
-
-  /**
-   * Filters a page of items against the window.
-   *
-   * Items before window_from are discarded. First item strictly past
-   * window_to signals end-of-window (list is sorted ASC by start_at).
-   *
-   * @return array{0: array, 1: bool}
-   *   Tuple [filtered_items, stop_pagination].
-   */
-  protected function filterPageByWindow(array $pageItems, int $from, int $to): array {
-    $windowItems = [];
-    foreach ($pageItems as $item) {
-      $startAt = $this->itemStartTimestamp($item);
-      if ($startAt === NULL) {
-        continue;
-      }
-      if ($startAt > $to) {
-        return [$windowItems, TRUE];
-      }
-      if ($startAt < $from) {
-        continue;
-      }
-      $windowItems[] = $item;
-    }
-    return [$windowItems, FALSE];
-  }
-
-  /**
-   * Parses item's start_at into UNIX timestamp.
-   */
-  protected function itemStartTimestamp(array $item): ?int {
-    if (empty($item['start_at'])) {
-      return NULL;
-    }
-    $ts = strtotime($item['start_at']);
-    return $ts !== FALSE ? $ts : NULL;
   }
 
   /**

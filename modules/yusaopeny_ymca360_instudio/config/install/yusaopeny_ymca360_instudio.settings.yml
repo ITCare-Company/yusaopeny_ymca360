@@ -4,3 +4,4 @@ sync:
   past_days: 7
   window_days: 14
   page_size: 500
+  incremental: 0
