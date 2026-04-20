@@ -2,6 +2,7 @@
     "name": "ycloudyusa/yusaopeny_ymca360",
     "description": "YUSA OpenY YMCA360 integration",
     "type": "drupal-module",
+    "version": "1.1.99-dev",
     "authors": [
         {
             "name": "Andrey Zbukar",

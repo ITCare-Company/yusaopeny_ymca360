@@ -406,7 +406,7 @@ abstract class LoaderBase implements LoaderInterface {
    * @throws \Drupal\Core\Entity\EntityStorageException
    */
   protected function getClass(array $data) {
-    $activity_id = $this->getActivity($data['category_name'], (int) $data['schedule_id']);
+    $activity_id = $this->getActivity((string) ($data['category_name'] ?? 'Uncategorized'), (int) $data['schedule_id']);
     // Try to find class.
     $existing_classes = $this->nodeStorage
       ->getQuery()

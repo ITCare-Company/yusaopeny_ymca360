@@ -36,6 +36,13 @@ class DataWrapper implements DataWrapperInterface {
   private array $itemsToDelete = [];
 
   /**
+   * Current sync window (UNIX timestamps, UTC).
+   *
+   * @var array{from: ?int, to: ?int}
+   */
+  private array $syncWindow = ['from' => NULL, 'to' => NULL];
+
+  /**
    * {@inheritDoc}
    */
   public function getItems(): array {
@@ -90,6 +97,27 @@ class DataWrapper implements DataWrapperInterface {
    */
   public function setItemsToDelete(array $items): void {
     $this->itemsToDelete = $items;
+  }
+
+  /**
+   * Records the sync window covered by the current extract step.
+   *
+   * @param int $from
+   *   UNIX timestamp (UTC) for window start.
+   * @param int $to
+   *   UNIX timestamp (UTC) for window end.
+   */
+  public function setSyncWindow(int $from, int $to): void {
+    $this->syncWindow = ['from' => $from, 'to' => $to];
+  }
+
+  /**
+   * Returns the sync window covered by the current extract step.
+   *
+   * @return array{from: ?int, to: ?int}
+   */
+  public function getSyncWindow(): array {
+    return $this->syncWindow;
   }
 
 }

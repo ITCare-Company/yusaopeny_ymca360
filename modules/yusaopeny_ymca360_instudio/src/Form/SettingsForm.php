@@ -42,6 +42,41 @@ class SettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('cron.enable_cron'),
     ];
 
+    $form['sync'] = [
+      '#type' => 'details',
+      '#open' => TRUE,
+      '#title' => $this->t('Sync Window'),
+      '#description' => $this->t('Only sessions whose start time falls inside this window are pulled from the YMCA360 API and reconciled in Drupal. Sessions outside the window are left untouched by regular syncs.'),
+      '#tree' => TRUE,
+    ];
+    $form['sync']['past_days'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Past days'),
+      '#description' => $this->t('How many days back from today to include in the sync window.'),
+      '#default_value' => $config->get('sync.past_days') ?? 7,
+      '#min' => 0,
+      '#max' => 365,
+      '#step' => 1,
+    ];
+    $form['sync']['window_days'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Future days (window size)'),
+      '#description' => $this->t('How many days ahead of today to include in the sync window.'),
+      '#default_value' => $config->get('sync.window_days') ?? 14,
+      '#min' => 1,
+      '#max' => 365,
+      '#step' => 1,
+    ];
+    $form['sync']['page_size'] = [
+      '#type' => 'number',
+      '#title' => $this->t('API page size'),
+      '#description' => $this->t('Number of items fetched per API page. Larger pages = fewer requests but more memory per request.'),
+      '#default_value' => $config->get('sync.page_size') ?? 500,
+      '#min' => 50,
+      '#max' => 1000,
+      '#step' => 50,
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -51,8 +86,10 @@ class SettingsForm extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $this->config('yusaopeny_ymca360_instudio.settings')
       ->set('cron', $form_state->getValue('cron'))
+      ->set('sync', $form_state->getValue('sync'))
       ->save();
 
     parent::submitForm($form, $form_state);
   }
+
 }

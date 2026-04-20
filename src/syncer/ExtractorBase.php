@@ -15,6 +15,13 @@ use Drupal\yusaopeny_ymca360\Y360Client;
 abstract class ExtractorBase implements ExtractorInterface {
 
   /**
+   * Config factory for accessing submodule-specific settings.
+   *
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
+   */
+  protected ConfigFactoryInterface $configFactory;
+
+  /**
    * Config.
    *
    * @var \Drupal\Core\Config\ImmutableConfig
@@ -46,6 +53,7 @@ abstract class ExtractorBase implements ExtractorInterface {
    * Extractor class constructor.
    */
   public function __construct(ConfigFactoryInterface $config_factory, Y360Client $client, DataWrapper $data_wrapper, LoggerChannelInterface $logger) {
+    $this->configFactory = $config_factory;
     $this->config = $config_factory->get('yusaopeny_ymca360.settings');
     $this->client = $client;
     $this->dataWrapper = $data_wrapper;

@@ -1,2 +1,6 @@
 cron:
   enable_cron: 0
+sync:
+  past_days: 7
+  window_days: 14
+  page_size: 500
