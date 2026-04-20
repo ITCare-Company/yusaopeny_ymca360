@@ -157,13 +157,32 @@ abstract class LoaderBase implements LoaderInterface {
     $this->logger->info('[LOADER] There are %total objects to delete', [
       '%total' => count($items),
     ]);
-    $_start = microtime(TRUE);
-    foreach ($items as $item_id) {
-      $this->deleteSession($item_id);
-      if (microtime(true) - $_start > 60) {
-        break;
+    $this->runWithoutTrash(function () use ($items) {
+      $_start = microtime(TRUE);
+      foreach ($items as $item_id) {
+        $this->deleteSession($item_id);
+        if (microtime(true) - $_start > 60) {
+          break;
+        }
       }
+    });
+  }
+
+  /**
+   * Runs a callback with the Trash module bypassed.
+   *
+   * Sync reconciliation removes occurrences that no longer exist upstream —
+   * routing them through soft-delete would leave a growing trash backlog
+   * that re-syncs would keep churning through. When trash.manager is
+   * present we switch it to the "ignore" context so entity storage performs
+   * a real delete.
+   */
+  protected function runWithoutTrash(callable $callback): void {
+    if (!\Drupal::hasService('trash.manager')) {
+      $callback();
+      return;
     }
+    \Drupal::service('trash.manager')->executeInTrashContext('ignore', $callback);
   }
 
   /**

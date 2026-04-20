@@ -146,9 +146,13 @@ class Y360MappingRepository {
    * @throws \Drupal\Core\Entity\EntityStorageException
    */
   public function delete(int $mapping_id): void {
+    // Mapping may already be gone due to cascade from the session delete
+    // (hook_ENTITY_TYPE_delete in yusaopeny_ymca360.module removes mappings
+    // pointing at the deleted session). Tolerate that.
     $item = $this->storage->load($mapping_id);
-    /** @var \Drupal\Core\Entity\ContentEntityInterface $item */
-    $item->delete();
+    if ($item !== NULL) {
+      $item->delete();
+    }
   }
 
   /**
