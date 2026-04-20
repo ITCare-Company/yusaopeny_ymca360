@@ -51,11 +51,6 @@ class DataWrapper implements DataWrapperInterface {
   private bool $fullFetch = TRUE;
 
   /**
-   * Whether the orphan safety-net delete is enabled.
-   */
-  private bool $orphanDeleteEnabled = FALSE;
-
-  /**
    * Hard cap on deletions per run (0 = unlimited).
    */
   private int $maxDeletesPerRun = 0;
@@ -152,16 +147,8 @@ class DataWrapper implements DataWrapperInterface {
     return $this->fullFetch;
   }
 
-  /**
-   * Configures deletion safeguards for the current run.
-   */
-  public function setDeleteSafeguards(bool $orphanDeleteEnabled, int $maxDeletesPerRun): void {
-    $this->orphanDeleteEnabled = $orphanDeleteEnabled;
+  public function setMaxDeletesPerRun(int $maxDeletesPerRun): void {
     $this->maxDeletesPerRun = max(0, $maxDeletesPerRun);
-  }
-
-  public function isOrphanDeleteEnabled(): bool {
-    return $this->orphanDeleteEnabled;
   }
 
   public function getMaxDeletesPerRun(): int {

@@ -48,10 +48,7 @@ class Extractor extends ExtractorBase implements ExtractorInterface {
     }
     $this->dataWrapper->setSyncWindow($window['from'], $window['to']);
     $this->dataWrapper->setFullFetch($updatedSince === NULL);
-    $this->dataWrapper->setDeleteSafeguards(
-      (bool) $instudio->get('sync.orphan_delete_enabled'),
-      (int) ($instudio->get('sync.max_deletes_per_run') ?? 100),
-    );
+    $this->dataWrapper->setMaxDeletesPerRun((int) ($instudio->get('sync.max_deletes_per_run') ?? 500));
     \Drupal::state()->set(self::STATE_LAST_SYNC_TS, $runStartedAt);
   }
 

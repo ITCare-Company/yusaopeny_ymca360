@@ -134,14 +134,11 @@ abstract class TransformerBase implements TransformerInterface {
    */
   protected function buildDeletionList(): array {
     $deleteIds = $this->deletionQueue;
-    $window = $this->dataWrapper->getSyncWindow();
-    $shouldRunSafetyNet = $this->dataWrapper->isOrphanDeleteEnabled()
-      && $this->dataWrapper->isFullFetch()
-      && $window['from'] !== NULL
-      && $window['to'] !== NULL;
-    if ($shouldRunSafetyNet) {
-      $orphans = $this->findOrphanMappings($window['from'], $window['to']);
-      $deleteIds = array_merge($deleteIds, $orphans);
+    // Reconciliation only makes sense for full fetches — an incremental
+    // extract intentionally excludes unchanged items, which must not be
+    // deleted.
+    if ($this->dataWrapper->isFullFetch()) {
+      $deleteIds = array_merge($deleteIds, $this->findOrphanMappings());
     }
     $deleteIds = array_values(array_unique(array_map('intval', $deleteIds)));
     return $this->enforceDeleteCap($deleteIds);
@@ -163,10 +160,14 @@ abstract class TransformerBase implements TransformerInterface {
   }
 
   /**
-   * Mappings present in DB inside the window but missing from the API set.
+   * Mappings present in DB but missing from the extracted set.
+   *
+   * Sync is the source of truth: anything in Drupal that did not come back
+   * from the API (either outside the current window, or in-window with
+   * unknown y360 id) is orphaned by definition and gets removed.
    */
-  protected function findOrphanMappings(int $from, int $to): array {
-    $stored = $this->repository->getMappingsInWindow($from, $to);
+  protected function findOrphanMappings(): array {
+    $stored = $this->repository->getAllMappings();
     if (empty($stored)) {
       return [];
     }

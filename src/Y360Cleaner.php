@@ -44,9 +44,11 @@ class Y360Cleaner {
    */
   public function cleanup(int $limit = 50): void {
     $entities = $this->loadEntitiesToDelete($limit);
-    /** @var \Drupal\yusaopeny_ymca360\Entity\Y360Mapping $entity */
     foreach ($entities as $entity) {
-      $entity->getSession()->delete();
+      $session = $entity->getSession();
+      if ($session) {
+        $session->delete();
+      }
     }
     $this->storage->delete($entities);
   }
