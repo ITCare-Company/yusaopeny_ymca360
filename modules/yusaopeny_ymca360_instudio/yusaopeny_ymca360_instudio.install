@@ -58,7 +58,6 @@ function yusaopeny_ymca360_instudio_update_10002(): string {
  */
 function yusaopeny_ymca360_instudio_update_10001(): string {
   $defaults = [
-    'sync.past_days' => 7,
     'sync.window_days' => 14,
     'sync.page_size' => 500,
     'sync.incremental' => 0,

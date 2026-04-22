@@ -58,11 +58,10 @@ class Extractor extends ExtractorBase implements ExtractorInterface {
    * @return array{from: int, to: int}
    */
   protected function resolveSyncWindow($instudio): array {
-    $pastDays = (int) ($instudio->get('sync.past_days') ?? 7);
     $windowDays = (int) ($instudio->get('sync.window_days') ?? 14);
     $now = time();
     return [
-      'from' => $now - ($pastDays * 86400),
+      'from' => $now,
       'to' => $now + ($windowDays * 86400),
     ];
   }

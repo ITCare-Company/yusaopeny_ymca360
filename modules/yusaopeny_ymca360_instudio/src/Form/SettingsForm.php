@@ -49,15 +49,6 @@ class SettingsForm extends ConfigFormBase {
       '#description' => $this->t('Only sessions whose start time falls inside this window are pulled from the YMCA360 API and reconciled in Drupal. Sessions outside the window are left untouched by regular syncs.'),
       '#tree' => TRUE,
     ];
-    $form['sync']['past_days'] = [
-      '#type' => 'number',
-      '#title' => $this->t('Past days'),
-      '#description' => $this->t('How many days back from today to include in the sync window.'),
-      '#default_value' => $config->get('sync.past_days') ?? 7,
-      '#min' => 0,
-      '#max' => 365,
-      '#step' => 1,
-    ];
     $form['sync']['window_days'] = [
       '#type' => 'number',
       '#title' => $this->t('Future days (window size)'),
