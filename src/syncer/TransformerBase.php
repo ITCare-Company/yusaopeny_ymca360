@@ -133,13 +133,7 @@ abstract class TransformerBase implements TransformerInterface {
    *   Mapping IDs to delete.
    */
   protected function buildDeletionList(): array {
-    $deleteIds = $this->deletionQueue;
-    // Reconciliation only makes sense for full fetches — an incremental
-    // extract intentionally excludes unchanged items, which must not be
-    // deleted.
-    if ($this->dataWrapper->isFullFetch()) {
-      $deleteIds = array_merge($deleteIds, $this->findOrphanMappings());
-    }
+    $deleteIds = array_merge($this->deletionQueue, $this->findOrphanMappings());
     $deleteIds = array_values(array_unique(array_map('intval', $deleteIds)));
     return $this->enforceDeleteCap($deleteIds);
   }

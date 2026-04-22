@@ -3,7 +3,6 @@ cron:
 sync:
   window_days: 14
   page_size: 500
-  incremental: 0
   max_deletes_per_run: 500
   canceled_title_prefix: 'CANCELED: '
   canceled_publish_behavior: follow_api

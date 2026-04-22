@@ -67,12 +67,6 @@ class SettingsForm extends ConfigFormBase {
       '#max' => 1000,
       '#step' => 50,
     ];
-    $form['sync']['incremental'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Incremental sync'),
-      '#description' => $this->t('Only fetch items updated since the last sync run (API <code>updated_at</code> filter). First run after enabling still performs a full fetch. Recommended for frequent cron runs.'),
-      '#default_value' => $config->get('sync.incremental') ?? 0,
-    ];
     $form['sync']['max_deletes_per_run'] = [
       '#type' => 'number',
       '#title' => $this->t('Max deletes per run'),

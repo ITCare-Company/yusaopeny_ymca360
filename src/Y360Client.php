@@ -101,16 +101,13 @@ class Y360Client {
    *   Window end (UNIX timestamp, UTC). Maps to API `end_at` filter.
    * @param int $pageSize
    *   API pagination page size.
-   * @param int|null $updatedSince
-   *   If provided, restricts results to items updated at or after this
-   *   UNIX timestamp (API `updated_at` filter) for incremental syncs.
    *
    * @return array{items: array, stats: array}
    *   items: flat list of schedule occurrences.
    *   stats: ['pages_fetched' => N, 'api_total' => N, 'window_items' => N].
    */
-  public function getSchedulesWindowed(int $fromTimestamp, int $toTimestamp, int $pageSize = 500, ?int $updatedSince = NULL): array {
-    $queryParams = $this->buildWindowedQuery($fromTimestamp, $toTimestamp, $pageSize, $updatedSince);
+  public function getSchedulesWindowed(int $fromTimestamp, int $toTimestamp, int $pageSize = 500): array {
+    $queryParams = $this->buildWindowedQuery($fromTimestamp, $toTimestamp, $pageSize);
 
     $items = [];
     $totalPages = 1;
@@ -148,7 +145,7 @@ class Y360Client {
   /**
    * Builds the query params for a windowed schedules fetch.
    */
-  protected function buildWindowedQuery(int $fromTimestamp, int $toTimestamp, int $pageSize, ?int $updatedSince): array {
+  protected function buildWindowedQuery(int $fromTimestamp, int $toTimestamp, int $pageSize): array {
     $query = [
       'size' => $pageSize,
       'page' => 0,
@@ -159,9 +156,6 @@ class Y360Client {
       // Override so the full window is returned regardless of current time.
       'scheduled_from' => $fromTimestamp,
     ];
-    if ($updatedSince !== NULL) {
-      $query['updated_at'] = $updatedSince;
-    }
     $scheduleIds = $this->getEnabledScheduleIds();
     if (!empty($scheduleIds)) {
       $query['schedule_id'] = $scheduleIds;

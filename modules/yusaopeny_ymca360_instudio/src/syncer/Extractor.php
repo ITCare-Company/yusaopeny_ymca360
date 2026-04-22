@@ -9,12 +9,9 @@ use Drupal\yusaopeny_ymca360\syncer\ExtractorInterface;
  * Fetches in-studio session data from the YMCA360 API.
  *
  * Uses the API's native start_at / end_at / scheduled_from filters to pull
- * only the items that fall inside the sync window, plus an optional
- * updated_at filter for incremental cron runs.
+ * only the items that fall inside the sync window.
  */
 class Extractor extends ExtractorBase implements ExtractorInterface {
-
-  const STATE_LAST_SYNC_TS = 'yusaopeny_ymca360_instudio.last_sync_ts';
 
   /**
    * {@inheritdoc}
@@ -23,18 +20,13 @@ class Extractor extends ExtractorBase implements ExtractorInterface {
     $instudio = $this->configFactory->get('yusaopeny_ymca360_instudio.settings');
     $window = $this->resolveSyncWindow($instudio);
     $pageSize = (int) ($instudio->get('sync.page_size') ?? 500);
-    $updatedSince = $this->resolveUpdatedSince($instudio);
 
-    $this->logger->notice('[EXTRACTOR] Fetching YMCA360 schedules. Window %from → %to%incremental.', [
+    $this->logger->notice('[EXTRACTOR] Fetching YMCA360 schedules. Window %from → %to.', [
       '%from' => gmdate('Y-m-d H:i:s', $window['from']) . 'Z',
       '%to' => gmdate('Y-m-d H:i:s', $window['to']) . 'Z',
-      '%incremental' => $updatedSince
-        ? ', updated since ' . gmdate('Y-m-d H:i:s', $updatedSince) . 'Z'
-        : ' (full fetch)',
     ]);
 
-    $runStartedAt = time();
-    $result = $this->client->getSchedulesWindowed($window['from'], $window['to'], $pageSize, $updatedSince);
+    $result = $this->client->getSchedulesWindowed($window['from'], $window['to'], $pageSize);
     $items = $result['items'] ?? [];
     $stats = $result['stats'] ?? [];
 
@@ -47,9 +39,7 @@ class Extractor extends ExtractorBase implements ExtractorInterface {
       $this->dataWrapper->setItems($items);
     }
     $this->dataWrapper->setSyncWindow($window['from'], $window['to']);
-    $this->dataWrapper->setFullFetch($updatedSince === NULL);
     $this->dataWrapper->setMaxDeletesPerRun((int) ($instudio->get('sync.max_deletes_per_run') ?? 500));
-    \Drupal::state()->set(self::STATE_LAST_SYNC_TS, $runStartedAt);
   }
 
   /**
@@ -64,19 +54,6 @@ class Extractor extends ExtractorBase implements ExtractorInterface {
       'from' => $now,
       'to' => $now + ($windowDays * 86400),
     ];
-  }
-
-  /**
-   * Resolves incremental sync cursor.
-   *
-   * Returns NULL for a full fetch (first run, or incremental disabled).
-   */
-  protected function resolveUpdatedSince($instudio): ?int {
-    if (!$instudio->get('sync.incremental')) {
-      return NULL;
-    }
-    $lastSync = \Drupal::state()->get(self::STATE_LAST_SYNC_TS);
-    return is_numeric($lastSync) ? (int) $lastSync : NULL;
   }
 
 }
