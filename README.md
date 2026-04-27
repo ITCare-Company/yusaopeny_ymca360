@@ -38,7 +38,8 @@ a windowed, reconciliation-based syncer:
 REQUIREMENTS
 ------------
 
-* Open Y 11.0+ (Drupal 10/11).
+* Drupal 11 (this fork is Drupal 11 only — `core_version_requirement: ^11`).
+* Open Y 11.x (yusaopeny).
 * Trash module (recommended). The syncer detects it at runtime; without
   it deletes go through the standard storage path.
 
