@@ -5,4 +5,4 @@ sync:
   page_size: 500
   max_deletes_per_run: 500
   canceled_title_prefix: 'CANCELED: '
-  canceled_publish_behavior: follow_api
+  canceled_publish_behavior: keep_published

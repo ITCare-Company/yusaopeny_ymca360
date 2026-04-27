@@ -12,7 +12,11 @@ use Drupal\yusaopeny_ymca360\Y360MappingRepository;
 abstract class TransformerBase implements TransformerInterface {
 
   /**
-   * Upstream item statuses that mean the occurrence no longer exists.
+   * Upstream item statuses that mean the occurrence is gone for good.
+   *
+   * Only `deleted` removes the mapping outright. `canceled` is kept so the
+   * site can still surface "CANCELLED" to members (per ITCR-1239); how
+   * it's rendered is controlled by canceled_publish_behavior in settings.
    */
   protected const DELETED_STATUSES = ['deleted'];
 

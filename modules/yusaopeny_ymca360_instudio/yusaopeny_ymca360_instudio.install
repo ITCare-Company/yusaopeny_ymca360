@@ -62,7 +62,7 @@ function yusaopeny_ymca360_instudio_update_10001(): string {
     'sync.page_size' => 500,
     'sync.max_deletes_per_run' => 500,
     'sync.canceled_title_prefix' => 'CANCELED: ',
-    'sync.canceled_publish_behavior' => 'follow_api',
+    'sync.canceled_publish_behavior' => 'keep_published',
   ];
   $config = \Drupal::configFactory()->getEditable('yusaopeny_ymca360_instudio.settings');
   $added = [];
