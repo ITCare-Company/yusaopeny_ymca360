@@ -46,32 +46,14 @@ REQUIREMENTS
 INSTALLATION
 ------------
 
-The upstream package is available on Packagist as
-[`ycloudyusa/yusaopeny_ymca360`](https://packagist.org/packages/ycloudyusa/yusaopeny_ymca360).
-
-Once these changes are accepted upstream and a new release is tagged, install
-on any site with:
+Available on Packagist as
+[`ycloudyusa/yusaopeny_ymca360`](https://packagist.org/packages/ycloudyusa/yusaopeny_ymca360):
 
 ```
-composer require ycloudyusa/yusaopeny_ymca360:^1.2
+composer require ycloudyusa/yusaopeny_ymca360
 drush en yusaopeny_ymca360 yusaopeny_ymca360_instudio -y
 drush updb -y
 ```
-
-Until then, point composer at this fork via a VCS repository in the site's
-`composer.json`:
-
-```json
-"repositories": [
-  { "type": "vcs", "url": "https://github.com/ITCare-Company/yusaopeny_ymca360" }
-],
-"require": {
-  "ycloudyusa/yusaopeny_ymca360": "dev-feature/ITCR-790-syncer-improvements as 1.1.99"
-}
-```
-
-Or vendor the module under `custom_contrib/` and use a `path` repository (see
-the Bismarck site for an example).
 
 Modules to enable:
 
