@@ -68,9 +68,11 @@ The submodule's install hook adds `yusaopeny_ymca360_instudio.syncer` to
 * `update_10001` backfills the new sync settings (window_days, page_size,
   max_deletes_per_run, canceled_title_prefix, canceled_publish_behavior)
   on existing installs.
-* `update_10002` excludes syncer-owned bundles (session, activity, class,
-  program, program_subcategory) from `trash.settings.enabled_entity_types`
-  so reconciliation deletes are real.
+
+The Loader wraps deletes in
+`trash.manager->executeInTrashContext('ignore', ...)` at runtime, so
+reconciliation removes session nodes regardless of `trash.settings`. No
+trash-config rewriting is performed by this module.
 
 CONFIGURATION
 -------------
