@@ -1,5 +1,0 @@
-canceled-badge:
-  version: 1.x
-  css:
-    component:
-      css/canceled-badge.css: {}
