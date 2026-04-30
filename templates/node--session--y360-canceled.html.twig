@@ -1,0 +1,49 @@
+{#
+/**
+ * @file
+ * Default node--session template override for YMCA360-owned sessions.
+ *
+ * Renders a "CANCELED" badge before the title and applies the
+ * .session--canceled wrapper class when the upstream Y360 status is
+ * canceled. Sessions not owned by this module fall through to the
+ * standard core/theme markup unchanged.
+ *
+ * Available preprocess variables (set in yusaopeny_ymca360.module):
+ * - is_y360_canceled: TRUE when the linked Y360 mapping is canceled.
+ * - y360_canceled_label: label for the badge (from sync settings).
+ */
+#}
+{%
+  set classes = [
+    'node',
+    'node--type-' ~ node.bundle|clean_class,
+    node.isPromoted() ? 'node--promoted',
+    node.isSticky() ? 'node--sticky',
+    not node.isPublished() ? 'node--unpublished',
+    view_mode ? 'node--view-mode-' ~ view_mode|clean_class,
+    is_y360_canceled ? 'session--canceled',
+  ]
+%}
+<article{{ attributes.addClass(classes) }}>
+  {{ title_prefix }}
+  {% if not page %}
+    <h2{{ title_attributes }}>
+      {% if is_y360_canceled %}
+        <span class="session__canceled-badge">{{ y360_canceled_label }}</span>
+      {% endif %}
+      <a href="{{ url }}" rel="bookmark">{{ label }}</a>
+    </h2>
+  {% endif %}
+  {{ title_suffix }}
+
+  {% if display_submitted %}
+    <footer>
+      {{ author_picture }}
+      {{ submitted }}
+    </footer>
+  {% endif %}
+
+  <div{{ content_attributes.addClass('node__content') }}>
+    {{ content }}
+  </div>
+</article>

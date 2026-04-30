@@ -25,3 +25,112 @@ function yusaopeny_ymca360_node_delete(EntityInterface $node) {
 function yusaopeny_ymca360_cron() {
   \Drupal::service('yusaopeny_ymca360.cleaner')->cleanup();
 }
+
+/**
+ * Implements hook_theme().
+ *
+ * Registers a dedicated template for canceled YMCA360-owned sessions so
+ * the badge markup is provided by this module without overriding the
+ * generic node--session template that other modules/themes may rely on.
+ */
+function yusaopeny_ymca360_theme($existing, $type, $theme, $path): array {
+  return [
+    'node__session__y360_canceled' => [
+      'render element' => 'elements',
+      'base hook' => 'node',
+      'template' => 'node--session--y360-canceled',
+      'path' => $path . '/templates',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_theme_suggestions_node_alter().
+ *
+ * Adds the `node__session__y360_canceled` suggestion so the dedicated
+ * template is picked up only for canceled sessions owned by this
+ * module's syncers.
+ */
+function yusaopeny_ymca360_theme_suggestions_node_alter(array &$suggestions, array $variables): void {
+  $node = $variables['elements']['#node'] ?? NULL;
+  if (!$node || $node->bundle() !== 'session') {
+    return;
+  }
+  $mapping = _yusaopeny_ymca360_load_mapping_for_session((int) $node->id());
+  if (!$mapping) {
+    return;
+  }
+  if (_yusaopeny_ymca360_status_from_mapping($mapping) !== 'canceled') {
+    return;
+  }
+  $suggestions[] = 'node__session__y360_canceled';
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for node templates.
+ *
+ * Surfaces canceled-state markers for sessions that this module owns
+ * (i.e. that are linked to a Y360 mapping). Themes can branch on the
+ * `is_y360_canceled` flag and render the supplied label as a badge.
+ *
+ * Sessions created by other syncers or manually are not touched.
+ */
+function yusaopeny_ymca360_preprocess_node(array &$variables): void {
+  $node = $variables['node'] ?? NULL;
+  if (!$node || $node->bundle() !== 'session') {
+    return;
+  }
+  $mapping = _yusaopeny_ymca360_load_mapping_for_session((int) $node->id());
+  if (!$mapping) {
+    return;
+  }
+  $status = _yusaopeny_ymca360_status_from_mapping($mapping);
+  if ($status !== 'canceled') {
+    return;
+  }
+  $variables['is_y360_canceled'] = TRUE;
+  $variables['y360_canceled_label'] = _yusaopeny_ymca360_canceled_label();
+  $variables['attributes']['class'][] = 'session--canceled';
+  $variables['#attached']['library'][] = 'yusaopeny_ymca360/canceled-badge';
+
+  $prefix = (string) \Drupal::config('yusaopeny_ymca360_instudio.settings')->get('sync.canceled_title_prefix');
+  if ($prefix !== '' && isset($variables['label'][0]['#context']['value'])) {
+    $variables['label'][0]['#context']['value'] = preg_replace('/^' . preg_quote($prefix, '/') . '/u', '', $variables['label'][0]['#context']['value']);
+  }
+}
+
+/**
+ * Loads the Y360 mapping that owns a given session node, if any.
+ */
+function _yusaopeny_ymca360_load_mapping_for_session(int $session_nid) {
+  $storage = \Drupal::entityTypeManager()->getStorage('y360_mapping');
+  $mappings = $storage->loadByProperties(['session' => $session_nid]);
+  return $mappings ? reset($mappings) : NULL;
+}
+
+/**
+ * Returns the upstream status for a Y360 mapping, or NULL if not stored.
+ */
+function _yusaopeny_ymca360_status_from_mapping($mapping): ?string {
+  $field = $mapping->get('source_data');
+  if ($field->isEmpty()) {
+    return NULL;
+  }
+  // source_data is a MapItem field — first()->getValue() returns the
+  // raw API payload as a flat associative array.
+  $value = $field->first()->getValue();
+  return is_array($value) ? ($value['status'] ?? NULL) : NULL;
+}
+
+/**
+ * Returns the badge label for a canceled session.
+ *
+ * Pulled from the in-studio sync config so admins can change the wording
+ * once and have both the title prefix and the badge follow. Trailing
+ * punctuation/whitespace is stripped so "CANCELED: " yields "CANCELED".
+ */
+function _yusaopeny_ymca360_canceled_label(): string {
+  $prefix = (string) \Drupal::config('yusaopeny_ymca360_instudio.settings')->get('sync.canceled_title_prefix');
+  $label = trim(rtrim($prefix, ":\t\n\r\0\x0B "));
+  return $label !== '' ? $label : (string) t('Canceled');
+}

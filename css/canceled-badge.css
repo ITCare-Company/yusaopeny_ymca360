@@ -1,0 +1,30 @@
+/**
+ * Canceled YMCA360 session — badge + accent border.
+ *
+ * Variables can be overridden by site themes:
+ *   --y360-canceled-color: badge background, border accent.
+ *   --y360-canceled-text:  badge text color.
+ */
+:root {
+  --y360-canceled-color: #d92d20;
+  --y360-canceled-text: #ffffff;
+}
+
+.session--canceled {
+  border-left: 4px solid var(--y360-canceled-color);
+  padding-left: 12px;
+}
+
+.session__canceled-badge {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--y360-canceled-color);
+  color: var(--y360-canceled-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
