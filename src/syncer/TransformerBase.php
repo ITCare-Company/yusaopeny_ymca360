@@ -137,7 +137,10 @@ abstract class TransformerBase implements TransformerInterface {
    *   Mapping IDs to delete.
    */
   protected function buildDeletionList(): array {
-    $deleteIds = array_merge($this->deletionQueue, $this->findOrphanMappings());
+    $orphans = $this->dataWrapper->shouldSkipOrphanReconciliation()
+      ? []
+      : $this->findOrphanMappings();
+    $deleteIds = array_merge($this->deletionQueue, $orphans);
     $deleteIds = array_values(array_unique(array_map('intval', $deleteIds)));
     return $this->enforceDeleteCap($deleteIds);
   }

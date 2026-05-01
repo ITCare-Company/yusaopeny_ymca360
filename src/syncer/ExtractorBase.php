@@ -4,6 +4,7 @@ namespace Drupal\yusaopeny_ymca360\syncer;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Config\ImmutableConfig;
+use Drupal\Core\KeyValueStore\KeyValueFactoryInterface;
 use Drupal\Core\Logger\LoggerChannelInterface;
 use Drupal\yusaopeny_ymca360\Y360Client;
 
@@ -50,14 +51,22 @@ abstract class ExtractorBase implements ExtractorInterface {
   protected LoggerChannelInterface $logger;
 
   /**
+   * Key/value factory for the syncer's circuit-breaker state.
+   *
+   * @var \Drupal\Core\KeyValueStore\KeyValueFactoryInterface
+   */
+  protected KeyValueFactoryInterface $keyValueFactory;
+
+  /**
    * Extractor class constructor.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, Y360Client $client, DataWrapper $data_wrapper, LoggerChannelInterface $logger) {
+  public function __construct(ConfigFactoryInterface $config_factory, Y360Client $client, DataWrapper $data_wrapper, LoggerChannelInterface $logger, KeyValueFactoryInterface $key_value_factory) {
     $this->configFactory = $config_factory;
     $this->config = $config_factory->get('yusaopeny_ymca360.settings');
     $this->client = $client;
     $this->dataWrapper = $data_wrapper;
     $this->logger = $logger;
+    $this->keyValueFactory = $key_value_factory;
   }
 
   /**

@@ -38,6 +38,37 @@ class Extractor extends ExtractorBase implements ExtractorInterface {
     $this->dataWrapper->setItems($items);
     $this->dataWrapper->setSyncWindow($window['from'], $window['to']);
     $this->dataWrapper->setMaxDeletesPerRun((int) ($instudio->get('sync.max_deletes_per_run') ?? 500));
+    $this->applyEmptyExtractCircuitBreaker(count($items), (int) ($instudio->get('sync.empty_extract_threshold') ?? 2));
+  }
+
+  /**
+   * Circuit breaker for the orphan-reconciliation step.
+   *
+   * Tracks how many sync runs in a row produced an empty extract. When the
+   * count reaches the threshold (default 2), instructs the transformer to
+   * skip orphan-by-absence deletion this run — the API state is unreliable
+   * and otherwise every stored mapping that did not come back would be
+   * flagged for deletion. Resets to zero as soon as the API returns at
+   * least one item.
+   */
+  protected function applyEmptyExtractCircuitBreaker(int $itemCount, int $threshold): void {
+    $store = $this->keyValueFactory->get('yusaopeny_ymca360_syncer');
+    $key = 'instudio.empty_extract_streak';
+    if ($itemCount > 0) {
+      $store->set($key, 0);
+      $this->dataWrapper->setSkipOrphanReconciliation(FALSE);
+      return;
+    }
+    $streak = (int) $store->get($key, 0) + 1;
+    $store->set($key, $streak);
+    $vars = ['%s' => $streak, '%t' => $threshold];
+    if ($streak >= $threshold) {
+      $this->logger->warning('[EXTRACTOR] %s consecutive empty extracts (>= %t) — emptiness confirmed, running orphan reconciliation.', $vars);
+      $this->dataWrapper->setSkipOrphanReconciliation(FALSE);
+      return;
+    }
+    $this->logger->notice('[EXTRACTOR] Empty extract %s of %t — skipping orphan reconciliation until emptiness is confirmed.', $vars);
+    $this->dataWrapper->setSkipOrphanReconciliation(TRUE);
   }
 
   /**

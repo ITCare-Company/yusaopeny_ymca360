@@ -48,6 +48,15 @@ class DataWrapper implements DataWrapperInterface {
   private int $maxDeletesPerRun = 0;
 
   /**
+   * If true, the transformer skips orphan-by-absence reconciliation.
+   *
+   * Set when the extractor's circuit breaker tripped (consecutive empty
+   * extracts) — the API state is unreliable and removing every stored
+   * mapping that did not come back would cascade into a wipe.
+   */
+  private bool $skipOrphanReconciliation = FALSE;
+
+  /**
    * {@inheritDoc}
    */
   public function getItems(): array {
@@ -131,6 +140,14 @@ class DataWrapper implements DataWrapperInterface {
 
   public function getMaxDeletesPerRun(): int {
     return $this->maxDeletesPerRun;
+  }
+
+  public function setSkipOrphanReconciliation(bool $skip): void {
+    $this->skipOrphanReconciliation = $skip;
+  }
+
+  public function shouldSkipOrphanReconciliation(): bool {
+    return $this->skipOrphanReconciliation;
   }
 
 }

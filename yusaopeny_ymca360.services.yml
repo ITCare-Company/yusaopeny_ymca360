@@ -25,6 +25,7 @@ services:
       - '@yusaopeny_ymca360.y360_client'
       - '@yusaopeny_ymca360.data_wrapper'
       - '@logger.channel.yusaopeny_ymca360_syncer'
+      - '@keyvalue'
 
   yusaopeny_ymca360.transformer:
     abstract: true
