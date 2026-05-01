@@ -14,6 +14,40 @@ function yusaopeny_ymca360_instudio_install() {
   $active_syncers[] = 'yusaopeny_ymca360_instudio.syncer';
   $config->set('active_syncers', $active_syncers);
   $config->save();
+
+  _yusaopeny_ymca360_instudio_exclude_bundles_from_trash();
+}
+
+/**
+ * Removes syncer-owned node bundles from trash.settings.enabled_entity_types.
+ *
+ * Reconciliation deletes expired/removed occurrences every run; letting
+ * Trash soft-delete them would build an ever-growing backlog. The affected
+ * bundles are the ones the syncer creates or references in lockstep:
+ * session, activity, class, program, program_subcategory. Other bundles the
+ * site has opted into Trash for are preserved.
+ */
+function _yusaopeny_ymca360_instudio_exclude_bundles_from_trash(): void {
+  if (!\Drupal::moduleHandler()->moduleExists('trash')) {
+    return;
+  }
+  $excluded = ['session', 'activity', 'class', 'program', 'program_subcategory'];
+  $config = \Drupal::configFactory()->getEditable('trash.settings');
+  $enabled = $config->get('enabled_entity_types') ?? [];
+
+  // If the site has not opted "node" into Trash at all, do nothing — we
+  // would otherwise enroll every other bundle on the site by accident.
+  if (!array_key_exists('node', $enabled)) {
+    return;
+  }
+
+  $current = (array) $enabled['node'];
+  $filtered = array_values(array_diff($current, $excluded));
+  if ($filtered === $current) {
+    return;
+  }
+  $enabled['node'] = $filtered;
+  $config->set('enabled_entity_types', $enabled)->save();
 }
 
 /**
@@ -27,4 +61,59 @@ function yusaopeny_ymca360_instudio_uninstall() {
   });
   $config->set('active_syncers', $active_syncers);
   $config->save();
+}
+
+/**
+ * Exclude syncer-owned node bundles from Trash soft-delete.
+ *
+ * Reconciliation deletes expired/removed occurrences every run; letting
+ * Trash soft-delete them would build an ever-growing backlog. The affected
+ * bundles are the ones the syncer creates or references in lockstep:
+ * session, activity, class, program, program_subcategory.
+ */
+function yusaopeny_ymca360_instudio_update_10002(): string {
+  if (!\Drupal::moduleHandler()->moduleExists('trash')) {
+    return 'trash module is not enabled — nothing to do.';
+  }
+  $config = \Drupal::configFactory()->getEditable('trash.settings');
+  $enabled = $config->get('enabled_entity_types') ?? [];
+  if (!array_key_exists('node', $enabled)) {
+    return 'Trash is not enabled for nodes on this site — nothing to do.';
+  }
+  $excluded = ['session', 'activity', 'class', 'program', 'program_subcategory'];
+  $current = (array) $enabled['node'];
+  $filtered = array_values(array_diff($current, $excluded));
+  if ($filtered === $current) {
+    return 'No syncer-owned bundles were tracked by Trash — nothing changed.';
+  }
+  $enabled['node'] = $filtered;
+  $config->set('enabled_entity_types', $enabled)->save();
+
+  return 'Removed syncer-owned bundles from Trash: ' . implode(', ', array_intersect($excluded, $current)) . '.';
+}
+
+/**
+ * Add sync window, incremental, delete safeguards, and canceled UX settings.
+ */
+function yusaopeny_ymca360_instudio_update_10001(): string {
+  $defaults = [
+    'sync.window_days' => 14,
+    'sync.page_size' => 500,
+    'sync.max_deletes_per_run' => 500,
+    'sync.canceled_title_prefix' => 'CANCELED: ',
+    'sync.canceled_publish_behavior' => 'keep_published',
+  ];
+  $config = \Drupal::configFactory()->getEditable('yusaopeny_ymca360_instudio.settings');
+  $added = [];
+  foreach ($defaults as $key => $value) {
+    if ($config->get($key) === NULL) {
+      $config->set($key, $value);
+      $added[] = $key;
+    }
+  }
+  $config->save();
+  if (empty($added)) {
+    return 'No settings added — all were already present.';
+  }
+  return 'Added settings: ' . implode(', ', $added) . '.';
 }

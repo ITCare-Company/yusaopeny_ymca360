@@ -36,6 +36,27 @@ class DataWrapper implements DataWrapperInterface {
   private array $itemsToDelete = [];
 
   /**
+   * Current sync window (UNIX timestamps, UTC).
+   *
+   * @var array{from: ?int, to: ?int}
+   */
+  private array $syncWindow = ['from' => NULL, 'to' => NULL];
+
+  /**
+   * Hard cap on deletions per run (0 = unlimited).
+   */
+  private int $maxDeletesPerRun = 0;
+
+  /**
+   * If true, the transformer skips orphan-by-absence reconciliation.
+   *
+   * Set when the extractor's circuit breaker tripped (consecutive empty
+   * extracts) — the API state is unreliable and removing every stored
+   * mapping that did not come back would cascade into a wipe.
+   */
+  private bool $skipOrphanReconciliation = FALSE;
+
+  /**
    * {@inheritDoc}
    */
   public function getItems(): array {
@@ -90,6 +111,43 @@ class DataWrapper implements DataWrapperInterface {
    */
   public function setItemsToDelete(array $items): void {
     $this->itemsToDelete = $items;
+  }
+
+  /**
+   * Records the sync window covered by the current extract step.
+   *
+   * @param int $from
+   *   UNIX timestamp (UTC) for window start.
+   * @param int $to
+   *   UNIX timestamp (UTC) for window end.
+   */
+  public function setSyncWindow(int $from, int $to): void {
+    $this->syncWindow = ['from' => $from, 'to' => $to];
+  }
+
+  /**
+   * Returns the sync window covered by the current extract step.
+   *
+   * @return array{from: ?int, to: ?int}
+   */
+  public function getSyncWindow(): array {
+    return $this->syncWindow;
+  }
+
+  public function setMaxDeletesPerRun(int $maxDeletesPerRun): void {
+    $this->maxDeletesPerRun = max(0, $maxDeletesPerRun);
+  }
+
+  public function getMaxDeletesPerRun(): int {
+    return $this->maxDeletesPerRun;
+  }
+
+  public function setSkipOrphanReconciliation(bool $skip): void {
+    $this->skipOrphanReconciliation = $skip;
+  }
+
+  public function shouldSkipOrphanReconciliation(): bool {
+    return $this->skipOrphanReconciliation;
   }
 
 }
