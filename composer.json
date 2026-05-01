@@ -2,8 +2,15 @@
     "name": "ycloudyusa/yusaopeny_ymca360",
     "description": "YUSA OpenY YMCA360 integration",
     "type": "drupal-module",
-    "version": "1.1.99-dev",
     "authors": [
+        {
+            "name": "Andrii Podanenko",
+            "email": "podarokua@gmail.com"
+        },
+        {
+            "name": "Vlad Sadretdinov",
+            "email": "vlad.sadretdinov@jet.dev"
+        },
         {
             "name": "Andrey Zbukar",
             "email": "andrey.zbukar@fivejars.com"
