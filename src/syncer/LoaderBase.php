@@ -257,11 +257,11 @@ abstract class LoaderBase implements LoaderInterface {
     $session->setTitle($this->getSessionTitle($item));
     $session->set('field_session_class', $this->getClass($item));
     $session->set('field_session_time', $this->getSessionTime($item));
-    $session->set('field_session_room', $item['studio_name']);
-    $session->set('field_session_instructor', $item['instructor_name']);
-    $session->set('field_session_description', $item['description']);
-    $session->set('field_session_min_age', $item['min_age']);
-    $session->set('field_session_max_age', $item['max_age']);
+    $session->set('field_session_room', $item['studio_name'] ?? NULL);
+    $session->set('field_session_instructor', $item['instructor_name'] ?? NULL);
+    $session->set('field_session_description', $item['description'] ?? NULL);
+    $session->set('field_session_min_age', $item['min_age'] ?? NULL);
+    $session->set('field_session_max_age', $item['max_age'] ?? NULL);
 
     $this->applyOptionalFields($session, $item);
 
@@ -382,10 +382,19 @@ abstract class LoaderBase implements LoaderInterface {
    * @throws \Drupal\Core\Entity\EntityStorageException
    */
   protected function deleteSession(int $mapping_id): void {
-    /** @var \Drupal\yusaopeny_ymca360\Entity\Y360Mapping $mapping */
+    /** @var \Drupal\yusaopeny_ymca360\Entity\Y360Mapping|null $mapping */
     $mapping = $this->repository->getStorage()->load($mapping_id);
+    if (!$mapping) {
+      $this->logger->info('[LOADER] Skip delete: mapping %id is gone (likely cascaded by node delete).', ['%id' => $mapping_id]);
+      return;
+    }
     $session = $mapping->getSession();
-    $session->delete();
+    if ($session) {
+      $session->delete();
+    }
+    else {
+      $this->logger->info('[LOADER] Mapping %id has no linked session; removing mapping only.', ['%id' => $mapping_id]);
+    }
     $this->repository->delete($mapping_id);
   }
 
@@ -466,7 +475,6 @@ abstract class LoaderBase implements LoaderInterface {
       'value' => $this->repository->formatIsoDate($data['start_at']),
       'end_value' => $this->repository->formatIsoDate($data['end_at']),
     ]);
-    $paragraph->isNew();
     $paragraph->save();
 
     $paragraphs[] = [

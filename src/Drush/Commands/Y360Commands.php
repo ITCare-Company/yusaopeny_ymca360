@@ -6,7 +6,6 @@ use Drupal\Core\Database\Connection;
 use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
 use Drupal\ymca_sync\SyncerRunner;
-use Drupal\yusaopeny_ymca360\Y360Cleaner;
 use Drupal\yusaopeny_ymca360\Y360Client;
 use Drupal\yusaopeny_ymca360\Y360MappingRepository;
 use Drush\Attributes as CLI;
@@ -24,8 +23,6 @@ final class Y360Commands extends DrushCommands {
   public function __construct(
     #[Autowire(service: 'yusaopeny_ymca360.mapping_repository')]
     private readonly Y360MappingRepository $repository,
-    #[Autowire(service: 'yusaopeny_ymca360.cleaner')]
-    private readonly Y360Cleaner $cleaner,
     #[Autowire(service: 'yusaopeny_ymca360.y360_client')]
     private readonly Y360Client $client,
     #[Autowire(service: 'ymca_sync.syncer')]
@@ -113,21 +110,6 @@ final class Y360Commands extends DrushCommands {
     }
 
     return new \Consolidation\OutputFormatters\StructuredData\RowsOfFields($rows);
-  }
-
-  /**
-   * Runs the past-sessions cleaner once (Y360Cleaner::cleanup).
-   *
-   * Independent of the sync window — purges mapping rows whose start_at is
-   * already in the past. Useful after switching past_days off.
-   */
-  #[CLI\Command(name: 'y360:cleanup', aliases: ['y360-cu'])]
-  #[CLI\Option(name: 'limit', description: 'Maximum mappings to remove in one call.')]
-  #[CLI\Usage(name: 'drush y360:cleanup --limit=200', description: 'Purge up to 200 past mappings.')]
-  public function cleanup(array $options = ['limit' => 50]): void {
-    $limit = (int) $options['limit'];
-    $this->cleaner->cleanup($limit);
-    $this->logger()->success(dt('Cleaner ran with limit @l. Check `drush y360:status` for new counts.', ['@l' => $limit]));
   }
 
   /**

@@ -16,16 +16,26 @@ services:
   yusaopeny_ymca360.data_wrapper:
     class: Drupal\yusaopeny_ymca360\syncer\DataWrapper
 
+  # Abstract parents for submodule syncers (instudio, livestreams). The base
+  # classes are abstract; only concrete subclasses are usable services.
   yusaopeny_ymca360.extractor:
-    class: Drupal\yusaopeny_ymca360\syncer\ExtractorBase
+    abstract: true
     arguments:
       - '@config.factory'
       - '@yusaopeny_ymca360.y360_client'
       - '@yusaopeny_ymca360.data_wrapper'
       - '@logger.channel.yusaopeny_ymca360_syncer'
 
+  yusaopeny_ymca360.transformer:
+    abstract: true
+    arguments:
+      - '@yusaopeny_ymca360.data_wrapper'
+      - '@yusaopeny_ymca360.mapping_repository'
+      - '@logger.channel.yusaopeny_ymca360_syncer'
+      - '@entity.memory_cache'
+
   yusaopeny_ymca360.loader:
-    class: Drupal\yusaopeny_ymca360\syncer\LoaderBase
+    abstract: true
     arguments:
       - '@yusaopeny_ymca360.data_wrapper'
       - '@yusaopeny_ymca360.mapping_repository'
@@ -34,20 +44,6 @@ services:
       - '@state'
       - '@config.factory'
       - '@module_handler'
-
-  yusaopeny_ymca360.transformer:
-    class: Drupal\yusaopeny_ymca360\syncer\TransformerBase
-    arguments:
-      - '@yusaopeny_ymca360.data_wrapper'
-      - '@yusaopeny_ymca360.mapping_repository'
-      - '@logger.channel.yusaopeny_ymca360_syncer'
-      - '@entity.memory_cache'
-
-  yusaopeny_ymca360.cleaner:
-    class: Drupal\yusaopeny_ymca360\Y360Cleaner
-    arguments:
-      - '@entity_type.manager'
-      - '@datetime.time'
 
   logger.channel.yusaopeny_ymca360_syncer:
     parent: logger.channel_base

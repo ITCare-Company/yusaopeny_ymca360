@@ -22,8 +22,8 @@ class Extractor extends ExtractorBase implements ExtractorInterface {
     $pageSize = (int) ($instudio->get('sync.page_size') ?? 500);
 
     $this->logger->notice('[EXTRACTOR] Fetching YMCA360 schedules. Window %from → %to.', [
-      '%from' => gmdate('Y-m-d H:i:s', $window['from']) . 'Z',
-      '%to' => gmdate('Y-m-d H:i:s', $window['to']) . 'Z',
+      '%from' => gmdate(\DateTimeInterface::ATOM, $window['from']),
+      '%to' => gmdate(\DateTimeInterface::ATOM, $window['to']),
     ]);
 
     $result = $this->client->getSchedulesWindowed($window['from'], $window['to'], $pageSize);
@@ -35,9 +35,7 @@ class Extractor extends ExtractorBase implements ExtractorInterface {
       '%total' => $stats['api_total'] ?? 0,
     ]);
 
-    if (!empty($items)) {
-      $this->dataWrapper->setItems($items);
-    }
+    $this->dataWrapper->setItems($items);
     $this->dataWrapper->setSyncWindow($window['from'], $window['to']);
     $this->dataWrapper->setMaxDeletesPerRun((int) ($instudio->get('sync.max_deletes_per_run') ?? 500));
   }

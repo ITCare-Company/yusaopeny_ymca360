@@ -165,7 +165,12 @@ class Y360MappingRepository {
    *   Date string in data storage format.
    */
   public function formatIsoDate(string $iso_date): ?string {
+    // Storage format is naive UTC (DATETIME_STORAGE_TIMEZONE = UTC), so we
+    // must convert before formatting — otherwise an API string without an
+    // offset would be persisted in the server's local timezone and
+    // y360:status / window queries would silently miscount.
     $date = new DateTimePlus($iso_date);
+    $date->setTimezone(new \DateTimeZone(DateTimeItemInterface::STORAGE_TIMEZONE));
     return $date->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
   }
 
@@ -179,15 +184,13 @@ class Y360MappingRepository {
    *   Array keyed by mapping ID, values are the external y360_id.
    */
   public function getAllMappings(): array {
-    $ids = $this->storage->getQuery()
-      ->accessCheck(FALSE)
-      ->execute();
-    if (empty($ids)) {
-      return [];
-    }
+    $rows = $this->connection->select(self::STORAGE, 'm')
+      ->fields('m', ['id', 'y360id'])
+      ->execute()
+      ->fetchAllKeyed();
     $map = [];
-    foreach ($this->storage->loadMultiple($ids) as $mapping) {
-      $map[(int) $mapping->id()] = (int) $mapping->getY360Id();
+    foreach ($rows as $id => $y360id) {
+      $map[(int) $id] = (int) $y360id;
     }
     return $map;
   }
@@ -202,7 +205,11 @@ class Y360MappingRepository {
       ->update(self::STORAGE)
       ->fields(['hash' => ''])
       ->execute();
+    // Raw UPDATE bypasses persistent caches — invalidate the entity-list
+    // cache tag so any loaded mapping entity (in this request or a CDN
+    // render) does not keep the stale hash.
     $this->storage->resetCache();
+    \Drupal::service('cache_tags.invalidator')->invalidateTags(['y360_mapping_list']);
   }
 
 }

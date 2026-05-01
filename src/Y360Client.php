@@ -164,11 +164,12 @@ class Y360Client {
   }
 
   /**
-   * Legacy fetch without time window.
+   * Single-page fetch — used for facets / non-windowed callers.
    *
-   * Kept for BC (facets, verification). Prefer getSchedulesWindowed() for syncing.
+   * Prefer getSchedulesWindowed() for syncing; this method exists for the
+   * locations mapping form (summary facets) and the livestreams extractor.
    */
-  public function getSchedules(int $size = 250, array $filters = [], int $limit = 5000): array {
+  public function getSchedules(int $size = 250, array $filters = []): array {
     $queryParams = [
       'size' => $size,
       'page' => 0,
@@ -177,21 +178,7 @@ class Y360Client {
     if (!empty($scheduleIds)) {
       $queryParams['schedule_id'] = $scheduleIds;
     }
-
-    $json = $this->doRequest($queryParams);
-    if ($size !== 0) {
-      return $json;
-    }
-
-    $totalPages = $json['summary']['total_pages'] ?? 1;
-    $queryParams['page'] = 1;
-    while ($queryParams['page'] < $totalPages && count($json['items']) < $limit) {
-      $data = $this->doRequest($queryParams);
-      $json['items'] = array_merge($json['items'], $data['items']);
-      $queryParams['page']++;
-      usleep(100000);
-    }
-    return $json;
+    return $this->doRequest($queryParams);
   }
 
   /**
