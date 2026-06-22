@@ -146,9 +146,13 @@ class Y360MappingRepository {
    * @throws \Drupal\Core\Entity\EntityStorageException
    */
   public function delete(int $mapping_id): void {
+    // Mapping may already be gone due to cascade from the session delete
+    // (hook_ENTITY_TYPE_delete in yusaopeny_ymca360.module removes mappings
+    // pointing at the deleted session). Tolerate that.
     $item = $this->storage->load($mapping_id);
-    /** @var \Drupal\Core\Entity\ContentEntityInterface $item */
-    $item->delete();
+    if ($item !== NULL) {
+      $item->delete();
+    }
   }
 
   /**
@@ -161,8 +165,34 @@ class Y360MappingRepository {
    *   Date string in data storage format.
    */
   public function formatIsoDate(string $iso_date): ?string {
+    // Storage format is naive UTC (DATETIME_STORAGE_TIMEZONE = UTC), so we
+    // must convert before formatting — otherwise an API string without an
+    // offset would be persisted in the server's local timezone and
+    // y360:status / window queries would silently miscount.
     $date = new DateTimePlus($iso_date);
+    $date->setTimezone(new \DateTimeZone(DateTimeItemInterface::STORAGE_TIMEZONE));
     return $date->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
+  }
+
+  /**
+   * Loads every mapping in storage, keyed by mapping id → y360 id.
+   *
+   * The syncer treats extraction as the source of truth, so reconciliation
+   * needs to see every stored mapping, not just those inside a window.
+   *
+   * @return array<int, int>
+   *   Array keyed by mapping ID, values are the external y360_id.
+   */
+  public function getAllMappings(): array {
+    $rows = $this->connection->select(self::STORAGE, 'm')
+      ->fields('m', ['id', 'y360id'])
+      ->execute()
+      ->fetchAllKeyed();
+    $map = [];
+    foreach ($rows as $id => $y360id) {
+      $map[(int) $id] = (int) $y360id;
+    }
+    return $map;
   }
 
   /**
@@ -175,7 +205,11 @@ class Y360MappingRepository {
       ->update(self::STORAGE)
       ->fields(['hash' => ''])
       ->execute();
+    // Raw UPDATE bypasses persistent caches — invalidate the entity-list
+    // cache tag so any loaded mapping entity (in this request or a CDN
+    // render) does not keep the stale hash.
     $this->storage->resetCache();
+    \Drupal::service('cache_tags.invalidator')->invalidateTags(['y360_mapping_list']);
   }
 
 }
